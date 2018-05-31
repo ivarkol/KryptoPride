@@ -1,0 +1,47 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.bmuschko:gradle-cargo-plugin:2.3'
+    }
+}
+
+apply plugin: "war"
+apply plugin: 'com.bmuschko.cargo'
+
+def ver = '0.0.1-SNAPSHOT'
+def appName = 'kryptopride'
+def archive = "${appName}-${ver}.war"
+
+version = ver
+
+
+war {
+    archiveName = archive
+}
+
+dependencies {
+    compile project(":krypto_subscriber")
+    compile project(":krypto_parser")
+
+    cargo "org.codehaus.cargo:cargo-core-uberjar:1.6.7", "org.codehaus.cargo:cargo-ant:1.6.7"
+}
+
+cargo {
+    containerId = 'tomcat8x'
+    port = 8080
+
+    deployable {
+        file = file("build/libs/${archive}")
+        context = "/${appName}"
+    }
+
+    remote {
+        protocol = 'https'
+        hostname = 'airiva.ru'
+        username = 'gradle'
+        password = '8E2HbgeCZ'
+    }
+}
