@@ -1,6 +1,6 @@
 rootProject.name = 'krypto_pride'
 
+include 'krypto_app'
 include 'krypto_parser'
 include 'krypto_subscriber'
-include 'krypto_app'
 include 'krypto_service'
