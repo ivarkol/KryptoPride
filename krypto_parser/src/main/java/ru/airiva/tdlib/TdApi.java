@@ -1,4 +1,4 @@
-package tdlib;
+package ru.airiva.tdlib;
 
 /**
  * This class contains as static nested classes all other TDLib interface

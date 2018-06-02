@@ -6,7 +6,7 @@ dependencies {
     compile project(":krypto_service")
 }
 
-mainClassName = "tdlib.Example"
+mainClassName = "ru.airiva.tdlib.Example"
 
 jar {
     manifest.attributes("Main-Class": mainClassName)
