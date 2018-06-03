@@ -31,7 +31,7 @@ public class TestController {
     }
 
     @GetMapping("/code/{code}")
-    ResponseEntity<String> checkCode(@RequestPart("code") String code) {
+    ResponseEntity<String> checkCode(@PathVariable("code") String code) {
         String rs;
         try {
             tlgInteractionService.checkCode(code);
