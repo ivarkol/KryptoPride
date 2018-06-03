@@ -45,7 +45,7 @@ cargo {
     remote {
         protocol = 'http'
         hostname = '185.174.172.24'
-        username = 'airivaadmin'
-        password = 'P@$$w0rd.'
+        username = 'gradle'
+        password = 'password'
     }
 }
