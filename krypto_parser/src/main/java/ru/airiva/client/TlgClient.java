@@ -13,10 +13,24 @@ import java.util.concurrent.CyclicBarrier;
 public class TlgClient {
 
     static {
+
+        String os = System.getProperty("os.name").toLowerCase();
+
         File file = null;
         try {
-            InputStream input = TlgClient.class.getResourceAsStream("/libtdjni.so");
-            file = File.createTempFile("libtdjni", ".so");
+            InputStream input = null;
+            if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                input = TlgClient.class.getResourceAsStream("/libtdjni.so");
+                file = File.createTempFile("libtdjni", ".so");
+            } else if (os.contains("mac")) {
+                input = TlgClient.class.getResourceAsStream("/libtdjni.dylib");
+                file = File.createTempFile("libtdjni", ".dylib");
+            }
+
+            if (file == null || !file.exists()) {
+                throw new RuntimeException("File libtdjni not found");
+            }
+
             OutputStream out = new FileOutputStream(file);
             int read;
             byte[] bytes = new byte[1024];
@@ -28,9 +42,6 @@ public class TlgClient {
             e.printStackTrace();
         }
 
-        if (file == null || !file.exists()) {
-            throw new RuntimeException("File libtdjni.so not found");
-        }
 
         String path = file.getAbsolutePath();
         System.load(path);
