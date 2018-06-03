@@ -11,6 +11,13 @@ subprojects {
     repositories {
         mavenCentral()
     }
+
+    dependencies {
+        compile 'ch.qos.logback:logback-classic:1.2.3'
+        compile 'org.springframework:spring-core:5.0.6.RELEASE'
+        compile 'org.springframework:spring-context:5.0.6.RELEASE'
+    }
+
 }
 
 task wrapper(type: Wrapper) {
