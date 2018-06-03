@@ -26,6 +26,9 @@ dependencies {
     compile project(":krypto_subscriber")
     compile project(":krypto_parser")
 
+    compile 'org.springframework:spring-webmvc:5.0.6.RELEASE'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.9.2'
+
     cargo "org.codehaus.cargo:cargo-core-uberjar:1.6.7", "org.codehaus.cargo:cargo-ant:1.6.7"
 }
 

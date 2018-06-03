@@ -49,9 +49,7 @@ public class TlgInteractionService implements TlgInteraction {
 
     @Override
     public void logout() {
-        tlgClient.getClient().send(new TdApi.LogOut(), object -> {
-            LOGGER.info(object.toString());
-        });
+        tlgClient.getClient().send(new TdApi.LogOut(), object -> LOGGER.info(object.toString()));
     }
 
     @Override
