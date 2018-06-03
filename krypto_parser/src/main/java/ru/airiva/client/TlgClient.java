@@ -5,10 +5,12 @@ import org.slf4j.LoggerFactory;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.TdApi;
 
-import java.io.*;
 import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+
+import static java.lang.System.getProperty;
+import static ru.airiva.utils.TdLibUtil.loadLibTd;
 
 public class TlgClient {
 
@@ -16,38 +18,7 @@ public class TlgClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(TlgClient.class);
 
     static {
-
-        String os = System.getProperty("os.name").toLowerCase();
-
-        File file = null;
-        String path = null;
-        try {
-            InputStream input = null;
-            if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                input = TlgClient.class.getResourceAsStream("/libtdjni.so");
-                file = File.createTempFile("libtdjni", ".so");
-            } else if (os.contains("mac")) {
-                input = TlgClient.class.getResourceAsStream("/libtdjni.dylib");
-                file = File.createTempFile("libtdjni", ".dylib");
-            }
-
-            if (file == null || !file.exists()) {
-                throw new RuntimeException("File libtdjni not found");
-            }
-
-            OutputStream out = new FileOutputStream(file);
-            int read;
-            byte[] bytes = new byte[1024];
-            while ((read = input.read(bytes)) != -1) {
-                out.write(bytes, 0, read);
-            }
-            file.deleteOnExit();
-            path = file.getAbsolutePath();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        System.load(path);
+        loadLibTd();
     }
 
     private final CyclicBarrier codeWaitBarrier = new CyclicBarrier(2);
@@ -101,7 +72,7 @@ public class TlgClient {
             switch (authorizationState.getConstructor()) {
                 case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
                     TdApi.TdlibParameters parameters = new TdApi.TdlibParameters();
-                    parameters.databaseDirectory = System.getProperty("java.io.tmpdir") + "/tdlib";
+                    parameters.databaseDirectory = getProperty("java.io.tmpdir") + "/tdlib";
                     parameters.useMessageDatabase = true;
                     parameters.apiId = 94575;
                     parameters.apiHash = "a3406de8d171bb422bb6ddf3bbd800e2";
