@@ -12,11 +12,15 @@ import java.util.concurrent.CyclicBarrier;
 
 public class TlgClient {
 
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TlgClient.class);
+
     static {
 
         String os = System.getProperty("os.name").toLowerCase();
 
         File file = null;
+        String path = null;
         try {
             InputStream input = null;
             if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
@@ -38,17 +42,13 @@ public class TlgClient {
                 out.write(bytes, 0, read);
             }
             file.deleteOnExit();
+            path = file.getAbsolutePath();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-
-        String path = file.getAbsolutePath();
         System.load(path);
     }
-
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(TlgClient.class);
 
     private final CyclicBarrier codeWaitBarrier = new CyclicBarrier(2);
     private final CyclicBarrier stateReadyBarrier = new CyclicBarrier(2);

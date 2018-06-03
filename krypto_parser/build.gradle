@@ -1,13 +1,5 @@
 version '0.0.1-SNAPSHOT'
 
-apply plugin: "application"
-
 dependencies {
     compile project(":krypto_service")
-}
-
-mainClassName = "ru.airiva.tdlib.Example"
-
-jar {
-    manifest.attributes("Main-Class": mainClassName)
 }
