@@ -90,7 +90,7 @@ public class TlgClient {
             switch (authorizationState.getConstructor()) {
                 case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
                     TdApi.TdlibParameters parameters = new TdApi.TdlibParameters();
-                    parameters.databaseDirectory = "tdlib";
+                    parameters.databaseDirectory = System.getProperty("java.io.tmpdir") + "/tdlib";
                     parameters.useMessageDatabase = true;
                     parameters.apiId = 94575;
                     parameters.apiHash = "a3406de8d171bb422bb6ddf3bbd800e2";
