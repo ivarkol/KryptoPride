@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.TdApi;
 
-import java.net.URL;
+import java.io.*;
 import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -13,8 +13,27 @@ import java.util.concurrent.CyclicBarrier;
 public class TlgClient {
 
     static {
-        URL resource = TlgClient.class.getResource("/libtdjni.so");
-        System.load(resource.getPath());
+        File file = null;
+        try {
+            InputStream input = TlgClient.class.getResourceAsStream("/libtdjni.so");
+            file = File.createTempFile("libtdjni", ".so");
+            OutputStream out = new FileOutputStream(file);
+            int read;
+            byte[] bytes = new byte[1024];
+            while ((read = input.read(bytes)) != -1) {
+                out.write(bytes, 0, read);
+            }
+            file.deleteOnExit();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (file == null || !file.exists()) {
+            throw new RuntimeException("File libtdjni.so not found");
+        }
+
+        String path = file.getAbsolutePath();
+        System.load(path);
     }
 
 
