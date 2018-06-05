@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.airiva.client.TlgInteractionService;
+import ru.airiva.exception.TlgFailAuthBsException;
+import ru.airiva.exception.TlgWaitAuthCodeBsException;
 
 import java.util.List;
 
@@ -18,12 +20,32 @@ public class TestController {
         this.tlgInteractionService = tlgInteractionService;
     }
 
+    @GetMapping(value = "/start", params = "phone")
+    ResponseEntity<String> start(@RequestParam("phone") String phone) {
+        String rs;
+        try {
+            tlgInteractionService.start(phone);
+            rs = "Start successful";
+        } catch (TlgWaitAuthCodeBsException e) {
+            rs = e.getMessage();
+        } catch (TlgFailAuthBsException e) {
+            rs = e.getMessage();
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
     @GetMapping(value = "/auth", params = "phone")
     ResponseEntity<String> auth(@RequestParam("phone") String phone) {
         String rs;
         try {
-            tlgInteractionService.auth(phone);
-            rs = "Please send authentication code";
+            tlgInteractionService.authorize(phone);
+            rs = "Start successful";
+        } catch (TlgWaitAuthCodeBsException e) {
+            rs = e.getMessage();
+        } catch (TlgFailAuthBsException e) {
+            rs = e.getMessage();
         } catch (Exception e) {
             rs = e.getMessage();
         }

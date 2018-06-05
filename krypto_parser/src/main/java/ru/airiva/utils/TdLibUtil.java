@@ -1,5 +1,7 @@
 package ru.airiva.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.airiva.client.TlgClient;
 
 import java.io.*;
@@ -8,10 +10,13 @@ import static java.lang.System.getProperty;
 
 public class TdLibUtil {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TdLibUtil.class);
+
     /**
      * Загрузка файла libtdjni
      */
     public static void loadLibTd() {
+        LOGGER.debug("Start loading a libtdjni");
         String path;
         try {
             File file;
@@ -45,6 +50,7 @@ public class TdLibUtil {
             throw new RuntimeException("Error across loading libtdjni", e);
         }
         System.load(path);
+        LOGGER.debug("Finish loading a libtdjni");
     }
 
 }

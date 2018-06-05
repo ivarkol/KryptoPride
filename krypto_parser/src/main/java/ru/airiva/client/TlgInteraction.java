@@ -1,12 +1,27 @@
 package ru.airiva.client;
 
+import ru.airiva.exception.TlgFailAuthBsException;
+import ru.airiva.exception.TlgWaitAuthCodeBsException;
+
 import java.util.List;
 
 public interface TlgInteraction {
 
-    void auth(String phone) throws Exception;
+    /**
+     * Авторизация клиента
+     *
+     * @param phone телефон клиента
+     */
+    void authorize(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException;
 
-    void checkCode(String code) throws Exception;
+    /**
+     * Запуск парсинга для текущего клиента
+     *
+     * @param phone телефон клиента
+     */
+    void start(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException;
+
+    void checkCode(String code);
 
     void logout();
 
