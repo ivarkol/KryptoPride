@@ -5,6 +5,10 @@ package ru.airiva.exception;
  */
 public class TlgFailAuthBsException extends BsException {
     public TlgFailAuthBsException() {
-        super("Во время произошла ошибка");
+        super("Во время авторизации произошла ошибка");
+    }
+
+    public TlgFailAuthBsException(String message) {
+        super(message);
     }
 }

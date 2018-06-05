@@ -1,5 +1,7 @@
 package ru.airiva.client;
 
+import ru.airiva.client.handler.AuthorizationCheckHandler;
+import ru.airiva.client.handler.CheckAuthenticationCodeHandler;
 import ru.airiva.client.handler.UpdatesHandler;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.Log;
@@ -21,25 +23,17 @@ public class TlgClient {
         Log.setVerbosityLevel(0);
     }
 
-    private final Client client;
-    private final String phone;
-    private final UpdatesHandler updatesHandler;
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public UpdatesHandler getUpdatesHandler() {
-        return updatesHandler;
-    }
+    public final UpdatesHandler updatesHandler;
+    public final AuthorizationCheckHandler authorizationCheckHandler;
+    public final CheckAuthenticationCodeHandler checkAuthenticationCodeHandler;
+    public final Client client;
+    public final String phone;
 
     public TlgClient(String phone) {
         this.phone = phone;
         updatesHandler = new UpdatesHandler(this);
+        authorizationCheckHandler = new AuthorizationCheckHandler();
+        checkAuthenticationCodeHandler = new CheckAuthenticationCodeHandler(this);
         client = Client.create(updatesHandler, null, null);
     }
 

@@ -17,10 +17,13 @@ public class UpdatesHandler implements Client.ResultHandler {
     private final TlgClient tlgClient;
     private final AuthorizationRequestHandler authorizationRequestHandler;
 
-    private final Exchanger<Integer> authExchanger = new Exchanger<>();
+    public final Exchanger<TdApi.Object> authExchanger = new Exchanger<>();
+    public final Exchanger<TdApi.Object> checkCodeExchanger = new Exchanger<>();
 
-    public Exchanger<Integer> getAuthExchanger() {
-        return authExchanger;
+    private volatile boolean fromWaitCodeState = false;
+
+    public void setFromWaitCodeState(boolean fromWaitCodeState) {
+        this.fromWaitCodeState = fromWaitCodeState;
     }
 
     public UpdatesHandler(TlgClient tlgClient) {
@@ -30,14 +33,10 @@ public class UpdatesHandler implements Client.ResultHandler {
 
     @Override
     public void onResult(TdApi.Object object) {
-        LOGGER.info("Incoming update: {}", object.getClass().getSimpleName());
+        LOGGER.info("Incoming update: {}", object.toString());
         switch (object.getConstructor()) {
             case TdApi.UpdateAuthorizationState.CONSTRUCTOR:
                 onAuthStateUpdated(((TdApi.UpdateAuthorizationState) object).authorizationState);
-                break;
-            case TdApi.UpdateOption.CONSTRUCTOR:
-                TdApi.UpdateOption updateOption = (TdApi.UpdateOption) object;
-                LOGGER.info("UpdateOption {} {}", updateOption.name, updateOption.value);
                 break;
         }
     }
@@ -47,7 +46,7 @@ public class UpdatesHandler implements Client.ResultHandler {
         switch (authorizationState.getConstructor()) {
             case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
                 TdApi.TdlibParameters parameters = new TdApi.TdlibParameters();
-                parameters.databaseDirectory = getProperty("java.io.tmpdir") + "/tdlib/" + tlgClient.getPhone().substring(1);
+                parameters.databaseDirectory = getProperty("java.io.tmpdir") + "/tdlib/" + tlgClient.phone.substring(1);
                 parameters.useMessageDatabase = true;
                 parameters.apiId = 94575;
                 parameters.apiHash = "a3406de8d171bb422bb6ddf3bbd800e2";
@@ -57,28 +56,36 @@ public class UpdatesHandler implements Client.ResultHandler {
                 parameters.applicationVersion = "1.0";
                 parameters.enableStorageOptimizer = true;
 
-                tlgClient.getClient().send(new TdApi.SetTdlibParameters(parameters), authorizationRequestHandler);
+                tlgClient.client.send(new TdApi.SetTdlibParameters(parameters), authorizationRequestHandler);
                 break;
             case TdApi.AuthorizationStateWaitEncryptionKey.CONSTRUCTOR:
-                tlgClient.getClient().send(new TdApi.CheckDatabaseEncryptionKey(), authorizationRequestHandler);
+                tlgClient.client.send(new TdApi.CheckDatabaseEncryptionKey(), authorizationRequestHandler);
                 break;
             case TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR: {
-                tlgClient.getClient().send(new TdApi.SetAuthenticationPhoneNumber(tlgClient.getPhone(), false, false), authorizationRequestHandler);
+                tlgClient.client.send(new TdApi.SetAuthenticationPhoneNumber(tlgClient.phone, false, false), authorizationRequestHandler);
                 break;
             }
             case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR: {
                 try {
-                    authExchanger.exchange(TdApi.AuthorizationStateWaitCode.CONSTRUCTOR);
+                    authExchanger.exchange(authorizationState);
                 } catch (InterruptedException e) {
                     LOGGER.info("AuthExchanger was interrupted from code waiting step", e);
                 }
                 break;
             }
             case TdApi.AuthorizationStateReady.CONSTRUCTOR:
-                try {
-                    authExchanger.exchange(TdApi.AuthorizationStateReady.CONSTRUCTOR);
-                } catch (InterruptedException e) {
-                    LOGGER.info("AuthExchanger was interrupted from state ready step", e);
+                if (fromWaitCodeState) {
+                    try {
+                        checkCodeExchanger.exchange(authorizationState);
+                    } catch (InterruptedException e) {
+                        LOGGER.info("CheckCodeExchanger was interrupted from state ready step", e);
+                    }
+                } else {
+                    try {
+                        authExchanger.exchange(authorizationState);
+                    } catch (InterruptedException e) {
+                        LOGGER.info("AuthExchanger was interrupted from state ready step", e);
+                    }
                 }
                 break;
             case TdApi.AuthorizationStateLoggingOut.CONSTRUCTOR:
@@ -93,7 +100,7 @@ public class UpdatesHandler implements Client.ResultHandler {
         }
     }
 
-    public class AuthorizationRequestHandler implements Client.ResultHandler {
+    private class AuthorizationRequestHandler implements Client.ResultHandler {
 
         private final Logger logger = LoggerFactory.getLogger(AuthorizationRequestHandler.class);
 
@@ -102,6 +109,12 @@ public class UpdatesHandler implements Client.ResultHandler {
             switch (object.getConstructor()) {
                 case TdApi.Error.CONSTRUCTOR:
                     logger.error("Receive an error: {}", object);
+                    try {
+                        authExchanger.exchange(object);
+                    } catch (InterruptedException e) {
+                        LOGGER.error("AuthExchanger was interrupted from Error case", e);
+                        Thread.currentThread().interrupt();
+                    }
                     break;
                 case TdApi.Ok.CONSTRUCTOR:
                     // result is already received through UpdateAuthorizationState, nothing to do

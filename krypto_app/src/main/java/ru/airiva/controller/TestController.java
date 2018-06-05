@@ -2,10 +2,15 @@ package ru.airiva.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import ru.airiva.client.TlgInteractionService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import ru.airiva.exception.TlgCheckAuthCodeBsException;
 import ru.airiva.exception.TlgFailAuthBsException;
+import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
+import ru.airiva.service.cg.TlgInteractionCgService;
 
 import java.util.List;
 
@@ -13,18 +18,18 @@ import java.util.List;
 @RequestMapping("/tlg")
 public class TestController {
 
-    private TlgInteractionService tlgInteractionService;
+    private TlgInteractionCgService tlgInteractionCgService;
 
     @Autowired
-    public void setTlgInteractionService(TlgInteractionService tlgInteractionService) {
-        this.tlgInteractionService = tlgInteractionService;
+    public void setTlgInteractionCgService(TlgInteractionCgService tlgInteractionCgService) {
+        this.tlgInteractionCgService = tlgInteractionCgService;
     }
 
-    @GetMapping(value = "/start", params = "phone")
+    @GetMapping(value = "/start", params = "phone", produces = "text/html;charset=UTF-8")
     ResponseEntity<String> start(@RequestParam("phone") String phone) {
         String rs;
         try {
-            tlgInteractionService.start(phone);
+            tlgInteractionCgService.start(phone);
             rs = "Start successful";
         } catch (TlgWaitAuthCodeBsException e) {
             rs = e.getMessage();
@@ -36,12 +41,12 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/auth", params = "phone")
+    @GetMapping(value = "/auth", params = "phone", produces = "text/html;charset=UTF-8")
     ResponseEntity<String> auth(@RequestParam("phone") String phone) {
         String rs;
         try {
-            tlgInteractionService.authorize(phone);
-            rs = "Start successful";
+            tlgInteractionCgService.authorize(phone);
+            rs = "Authorization successful";
         } catch (TlgWaitAuthCodeBsException e) {
             rs = e.getMessage();
         } catch (TlgFailAuthBsException e) {
@@ -52,12 +57,21 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping("/code/{code}")
-    ResponseEntity<String> checkCode(@PathVariable("code") String code) {
+    @GetMapping(value = "/code", params = {"phone", "code"}, produces = "text/html;charset=UTF-8")
+    ResponseEntity<String> checkCode(@RequestParam("phone") String phone,
+                                     @RequestParam("code") String code) {
         String rs;
         try {
-            tlgInteractionService.checkCode(code);
-            rs = "Authentication successful";
+            boolean isCodeCorrect = tlgInteractionCgService.checkCode(phone, code);
+            if (isCodeCorrect) {
+                rs = "Authentication successful";
+            } else {
+                rs = "Code is incorrect";
+            }
+        } catch (TlgNeedAuthBsException e) {
+            rs = e.getMessage();
+        } catch (TlgCheckAuthCodeBsException e) {
+            rs = e.getMessage();
         } catch (Exception e) {
             rs = e.getMessage();
         }
@@ -66,13 +80,18 @@ public class TestController {
 
     @GetMapping("/logout")
     ResponseEntity<String> logout() {
-        tlgInteractionService.logout();
+        tlgInteractionCgService.logout();
         return ResponseEntity.ok("Logout is successful");
     }
 
     @GetMapping("/chats")
     ResponseEntity<List<String>> getChats() {
-        List<String> chats = tlgInteractionService.getChats();
+        List<String> chats = tlgInteractionCgService.getChats();
         return ResponseEntity.ok(chats);
+    }
+
+    @GetMapping(value = "/test", produces = "text/html;charset=UTF-8")
+    ResponseEntity<String> test() {
+        return ResponseEntity.ok("ТЕСТ");
     }
 }
