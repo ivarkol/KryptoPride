@@ -36,9 +36,9 @@ public class TlgInteractionDaService {
         tlgClient.client.send(new TdApi.Close(), object -> {
             switch (object.getConstructor()) {
                 case TdApi.Ok.CONSTRUCTOR:
-                    LOGGER.info("Client {} successfully closed", tlgClient.phone);
+                    LOGGER.debug("Client {} successfully closed", tlgClient.phone);
                     break;
-                case TdApi.Error.CONSTRUCTOR:
+                default:
                     LOGGER.error("Client {} not closed. Error: {} {}", tlgClient.phone, ((TdApi.Error) object).code, ((TdApi.Error) object).message);
                     break;
             }

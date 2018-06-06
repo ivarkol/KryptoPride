@@ -78,9 +78,9 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping("/logout")
-    ResponseEntity<String> logout() {
-        tlgInteractionCgService.logout();
+    @GetMapping(value = "/logout", params = {"phone"}, produces = "text/html;charset=UTF-8")
+    ResponseEntity<String> logout(@RequestParam("phone") String phone) {
+        tlgInteractionCgService.logout(phone);
         return ResponseEntity.ok("Logout is successful");
     }
 

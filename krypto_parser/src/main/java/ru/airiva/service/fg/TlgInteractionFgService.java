@@ -1,5 +1,7 @@
 package ru.airiva.service.fg;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.airiva.client.TlgClient;
@@ -19,6 +21,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Service
 public class TlgInteractionFgService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TlgInteractionFgService.class);
 
     /**
      * Блокировки по номеру телефона
@@ -132,6 +136,35 @@ public class TlgInteractionFgService {
         }
 
         return result;
+    }
+
+    /**
+     * Логоут клиента
+     *
+     * @param phone телефон клиента
+     */
+    public void logout(final String phone) {
+        Lock lockByPhone = getLockByPhone(phone);
+
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = CLIENTS.get(phone);
+            if (tlgClient != null) {
+                tlgClient.client.send(new TdApi.LogOut(), object -> {
+                    switch (object.getConstructor()) {
+                        case TdApi.Error.CONSTRUCTOR:
+                            LOGGER.error("Client {} unsuccessful logout: {} {}",
+                                    tlgClient.phone,
+                                    ((TdApi.Error) object).code,
+                                    ((TdApi.Error) object).message);
+                            break;
+                    }
+                });
+                CLIENTS.remove(phone);
+            }
+        } finally {
+            lockByPhone.unlock();
+        }
     }
 
     /**

@@ -32,7 +32,13 @@ public interface TlgInteraction {
      */
     boolean checkCode(String phone, String code) throws TlgNeedAuthBsException, TlgCheckAuthCodeBsException;
 
-    void logout();
+    /**
+     * Логоут клиента
+     *
+     * @param phone телефон клиента
+     */
+    void logout(String phone);
+
 
     List<String> getChats();
 

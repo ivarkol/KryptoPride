@@ -79,20 +79,25 @@ public class UpdatesHandler implements Client.ResultHandler {
                         checkCodeExchanger.exchange(authorizationState);
                     } catch (InterruptedException e) {
                         LOGGER.info("CheckCodeExchanger was interrupted from state ready step", e);
+                        Thread.currentThread().interrupt();
                     }
                 } else {
                     try {
                         authExchanger.exchange(authorizationState);
                     } catch (InterruptedException e) {
                         LOGGER.info("AuthExchanger was interrupted from state ready step", e);
+                        Thread.currentThread().interrupt();
                     }
                 }
                 break;
             case TdApi.AuthorizationStateLoggingOut.CONSTRUCTOR:
+                LOGGER.debug("Client {} in logging out state", tlgClient.phone);
                 break;
             case TdApi.AuthorizationStateClosing.CONSTRUCTOR:
+                LOGGER.debug("Client {} in closing state", tlgClient.phone);
                 break;
             case TdApi.AuthorizationStateClosed.CONSTRUCTOR:
+                LOGGER.debug("Client {} successful closed", tlgClient.phone);
                 break;
             default:
                 LOGGER.error("Unsupported authorization state: {}", authorizationState);

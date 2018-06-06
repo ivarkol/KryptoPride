@@ -62,8 +62,8 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void logout() {
-//        tlgClient.getClient().send(new TdApi.LogOut(), object -> LOGGER.info(object.toString()));
+    public void logout(final String phone) {
+        tlgInteractionFgService.logout(phone);
     }
 
     @Override
