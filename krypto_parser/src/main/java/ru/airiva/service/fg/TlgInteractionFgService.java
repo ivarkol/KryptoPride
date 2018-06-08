@@ -10,9 +10,14 @@ import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.service.da.TlgInteractionDaService;
 import ru.airiva.tdlib.TdApi;
+import ru.airiva.vo.TlgChannel;
+import ru.airiva.vo.TlgChat;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -165,6 +170,89 @@ public class TlgInteractionFgService {
         } finally {
             lockByPhone.unlock();
         }
+    }
+
+    /**
+     * Каналы клиента
+     *
+     * @param phone телефон клиента
+     * @return набор идентификаторов чатов
+     */
+    public Collection<TlgChannel> getChannels(final String phone) {
+        TlgClient tlgClient = CLIENTS.get(phone);
+        if (!tlgClient.updatesHandler.chatsInitialized) {
+            initializeChats(tlgClient);
+        }
+        Collection<TlgChannel> channels = tlgClient.channels.values();
+        //Перекладываем названия в каналы
+        channels.forEach(tlgChannel -> {
+            String title = tlgClient.updatesHandler.supergroupId2Title.get(tlgChannel.id);
+            tlgChannel.setTitle(title != null && !title.isEmpty() ? title : "unknown");
+        });
+        return channels;
+    }
+
+    /**
+     * Загружает чаты клиента
+     *
+     * @param tlgClient клиент
+     */
+    private void initializeChats(final TlgClient tlgClient) {
+
+        final CyclicBarrier chatsBarrier = new CyclicBarrier(2);
+
+        long offsetOrder = Long.MAX_VALUE;
+        long offsetChatId = 0;
+        int limit = 20;
+
+        while (!tlgClient.updatesHandler.chatsInitialized) {
+            synchronized (tlgClient.updatesHandler.orderedChats) {
+                if (!tlgClient.updatesHandler.chatsInitialized) {
+                    if (!tlgClient.updatesHandler.orderedChats.isEmpty()) {
+                        TlgChat first = tlgClient.updatesHandler.orderedChats.first();
+                        offsetOrder = first.getOrder();
+                        offsetChatId = first.chatId;
+                    }
+                    tlgClient.client.send(new TdApi.GetChats(offsetOrder, offsetChatId, limit), object -> {
+                        switch (object.getConstructor()) {
+                            case TdApi.Error.CONSTRUCTOR:
+                                LOGGER.error("Receive an error for GetChats: {}", object);
+                                break;
+                            case TdApi.Chats.CONSTRUCTOR:
+                                long[] chatIds = ((TdApi.Chats) object).chatIds;
+                                if (chatIds.length == 0) {
+                                    tlgClient.updatesHandler.chatsInitialized = true;
+                                }
+                                try {
+                                    chatsBarrier.await();
+                                } catch (InterruptedException e) {
+                                    Thread.currentThread().interrupt();
+                                    chatsBarrier.reset();
+                                    LOGGER.error("Initialize chats was interrupted", e);
+                                } catch (BrokenBarrierException e) {
+                                    LOGGER.error("Chats initialize barrier was broken", e);
+                                }
+                                break;
+                            default:
+                                LOGGER.error("Receive wrong response from TDLib: {}", object);
+                        }
+                    });
+                }
+            }
+            try {
+                chatsBarrier.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOGGER.error("Chats initialize was interrupted", e);
+                chatsBarrier.reset();
+            } catch (BrokenBarrierException e) {
+                LOGGER.error("Chats initialize barrier was broken", e);
+            }
+        }
+        tlgClient.updatesHandler.chats.clear();
+        tlgClient.updatesHandler.orderedChats.clear();
+        LOGGER.debug("Chats have initialized");
+
     }
 
     /**
