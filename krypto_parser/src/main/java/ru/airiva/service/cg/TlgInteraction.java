@@ -4,6 +4,7 @@ import ru.airiva.exception.TlgCheckAuthCodeBsException;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
+import ru.airiva.vo.TlgChannel;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public interface TlgInteraction {
     /**
      * Проверка кода аутентификации клиента
      *
-     * @param code код
+     * @param code  код
      * @param phone телефон клиента
      * @return результат проверки
      */
@@ -39,7 +40,11 @@ public interface TlgInteraction {
      */
     void logout(String phone);
 
-
-    List<String> getChats();
+    /**
+     * Отсортированный по названию список аналов клиента
+     *
+     * @param phone телефон клиента
+     */
+    List<TlgChannel> getSortedChannels(String phone);
 
 }

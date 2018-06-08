@@ -5,7 +5,10 @@ import ru.airiva.client.handler.CheckAuthenticationCodeHandler;
 import ru.airiva.client.handler.UpdatesHandler;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.Log;
+import ru.airiva.vo.TlgChannel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import static ru.airiva.utils.TdLibUtil.loadLibTd;
@@ -28,6 +31,8 @@ public class TlgClient {
     public final CheckAuthenticationCodeHandler checkAuthenticationCodeHandler;
     public final Client client;
     public final String phone;
+
+    public final Map<Integer, TlgChannel> channels = new HashMap<>();
 
     public TlgClient(String phone) {
         this.phone = phone;

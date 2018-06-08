@@ -8,8 +8,10 @@ import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.service.fg.TlgInteractionFgService;
+import ru.airiva.vo.TlgChannel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -67,23 +69,10 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public List<String> getChats() {
-        List<String> chats = new ArrayList<>();
-//        tlgClient.getClient().send(new TdApi.GetChats(Long.MAX_VALUE, 0, 100), object -> {
-//            switch (object.getConstructor()) {
-//                case TdApi.Error.CONSTRUCTOR:
-//                    LOGGER.error("Receive an error for GetChats: {}", object);
-//                    break;
-//                case TdApi.Chats.CONSTRUCTOR:
-//                    long[] chatIds = ((TdApi.Chats) object).chatIds;
-//                    Arrays.stream(chatIds).forEach(value -> chats.add(String.valueOf(value)));
-//                    break;
-//                default:
-//                    LOGGER.error("Receive wrong response from TDLib: {}", object);
-//            }
-//
-//        });
-        return chats;
+    public List<TlgChannel> getSortedChannels(String phone) {
+        List<TlgChannel> channels = new ArrayList<>(tlgInteractionFgService.getChannels(phone));
+        Collections.sort(channels);
+        return channels;
     }
 
 }

@@ -16,6 +16,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Main class for interaction with the TDLib.
  */
 public final class Client implements Runnable {
+
+    private static AtomicLong clientCount = new AtomicLong(0L);
+
     /**
      * Interface for handler for results of queries to TDLib and incoming updates from TDLib.
      */
@@ -154,7 +157,7 @@ public final class Client implements Runnable {
      */
     public static Client create(ResultHandler updatesHandler, ExceptionHandler updatesExceptionHandler, ExceptionHandler defaultExceptionHandler) {
         Client client = new Client(updatesHandler, updatesExceptionHandler, defaultExceptionHandler);
-        new Thread(client, "TDLib thread").start();
+        new Thread(client, "TDLib_thread-" + clientCount.addAndGet(1L)).start();
         return client;
     }
 

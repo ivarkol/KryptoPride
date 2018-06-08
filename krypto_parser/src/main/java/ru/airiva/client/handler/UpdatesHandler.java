@@ -5,7 +5,11 @@ import org.slf4j.LoggerFactory;
 import ru.airiva.client.TlgClient;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.TdApi;
+import ru.airiva.vo.TlgChannel;
+import ru.airiva.vo.TlgChat;
 
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Exchanger;
 
 import static java.lang.System.getProperty;
@@ -20,6 +24,12 @@ public class UpdatesHandler implements Client.ResultHandler {
     public final Exchanger<TdApi.Object> authExchanger = new Exchanger<>();
     public final Exchanger<TdApi.Object> checkCodeExchanger = new Exchanger<>();
 
+    public final TreeSet<TlgChat> orderedChats = new TreeSet<>();
+    public final ConcurrentHashMap<Long, TlgChat> chats = new ConcurrentHashMap<>();
+    public volatile boolean chatsInitialized = false;
+    private final ConcurrentHashMap<Long, Integer> chatId2SupergroupId = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<Integer, String> supergroupId2Title = new ConcurrentHashMap<>();
+
     private volatile boolean fromWaitCodeState = false;
 
     public void setFromWaitCodeState(boolean fromWaitCodeState) {
@@ -31,12 +41,94 @@ public class UpdatesHandler implements Client.ResultHandler {
         this.authorizationRequestHandler = new AuthorizationRequestHandler();
     }
 
+    private void setChatOrder(TlgChat tlgChat, long order) {
+        synchronized (orderedChats) {
+            orderedChats.remove(tlgChat);
+            tlgChat.setOrder(order);
+            orderedChats.add(tlgChat);
+        }
+    }
+
     @Override
     public void onResult(TdApi.Object object) {
         LOGGER.info("Incoming update: {}", object.toString());
         switch (object.getConstructor()) {
             case TdApi.UpdateAuthorizationState.CONSTRUCTOR:
                 onAuthStateUpdated(((TdApi.UpdateAuthorizationState) object).authorizationState);
+                break;
+            case TdApi.UpdateNewChat.CONSTRUCTOR:
+                TdApi.Chat chat = ((TdApi.UpdateNewChat) object).chat;
+                if (!chatsInitialized) {
+                    TlgChat tlgChat = new TlgChat(chat.id, chat.order);
+                    chats.put(chat.id, tlgChat);
+                    setChatOrder(tlgChat, chat.order);
+                }
+                if (chat.type.getConstructor() == TdApi.ChatTypeSupergroup.CONSTRUCTOR) {
+                    TdApi.ChatTypeSupergroup typeSupergroup = ((TdApi.ChatTypeSupergroup) chat.type);
+                    if (typeSupergroup.isChannel) {
+                        chatId2SupergroupId.put(chat.id, typeSupergroup.supergroupId);
+                        supergroupId2Title.put(typeSupergroup.supergroupId, chat.title);
+                    }
+
+                }
+                break;
+            case TdApi.UpdateSupergroup.CONSTRUCTOR:
+                TdApi.Supergroup supergroup = ((TdApi.UpdateSupergroup) object).supergroup;
+                if (supergroup.isChannel) {
+                    synchronized (tlgClient.channels) {
+                        int statusConstructor = supergroup.status.getConstructor();
+                        if (statusConstructor == TdApi.ChatMemberStatusBanned.CONSTRUCTOR
+                                || statusConstructor == TdApi.ChatMemberStatusLeft.CONSTRUCTOR) {
+                            tlgClient.channels.remove(supergroup.id);
+                        } else {
+                            TlgChannel tlgChannel = tlgClient.channels.get(supergroup.id);
+                            if (tlgChannel != null) {
+                                tlgChannel.setTitle(supergroup.username);
+                            } else {
+                                tlgClient.channels.put(supergroup.id, new TlgChannel(supergroup.id));
+                            }
+
+                        }
+                    }
+                }
+                break;
+            case TdApi.UpdateChatOrder.CONSTRUCTOR:
+                if (!chatsInitialized) {
+                    TdApi.UpdateChatOrder updateChat = (TdApi.UpdateChatOrder) object;
+                    TlgChat tlgChat = chats.get(updateChat.chatId);
+                    setChatOrder(tlgChat, updateChat.order);
+                }
+                break;
+            case TdApi.UpdateChatLastMessage.CONSTRUCTOR:
+                if (!chatsInitialized) {
+                    TdApi.UpdateChatLastMessage updateChat = (TdApi.UpdateChatLastMessage) object;
+                    TlgChat tlgChat = chats.get(updateChat.chatId);
+                    setChatOrder(tlgChat, updateChat.order);
+                }
+                break;
+            case TdApi.UpdateChatIsPinned.CONSTRUCTOR:
+                if (!chatsInitialized) {
+                    TdApi.UpdateChatIsPinned updateChat = (TdApi.UpdateChatIsPinned) object;
+                    TlgChat tlgChat = chats.get(updateChat.chatId);
+                    setChatOrder(tlgChat, updateChat.order);
+                }
+                break;
+            case TdApi.UpdateChatDraftMessage.CONSTRUCTOR:
+                if (!chatsInitialized) {
+                    TdApi.UpdateChatDraftMessage updateChat = (TdApi.UpdateChatDraftMessage) object;
+                    TlgChat tlgChat = chats.get(updateChat.chatId);
+                    setChatOrder(tlgChat, updateChat.order);
+                }
+                break;
+            case TdApi.UpdateChatTitle.CONSTRUCTOR:
+                TdApi.UpdateChatTitle updateChatTitle = (TdApi.UpdateChatTitle) object;
+                Integer supergroupId = chatId2SupergroupId.get(updateChatTitle.chatId);
+                if (supergroupId != null) {
+                    synchronized (tlgClient.channels) {
+                        tlgClient.channels.get(supergroupId).setTitle(updateChatTitle.title);
+                        supergroupId2Title.put(supergroupId, updateChatTitle.title);
+                    }
+                }
                 break;
         }
     }

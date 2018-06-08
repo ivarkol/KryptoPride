@@ -11,6 +11,7 @@ import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.service.cg.TlgInteractionCgService;
+import ru.airiva.vo.TlgChannel;
 
 import java.util.List;
 
@@ -84,10 +85,10 @@ public class TestController {
         return ResponseEntity.ok("Logout is successful");
     }
 
-    @GetMapping("/chats")
-    ResponseEntity<List<String>> getChats() {
-        List<String> chats = tlgInteractionCgService.getChats();
-        return ResponseEntity.ok(chats);
+    @GetMapping(value = "/chats", params = {"phone"})
+    ResponseEntity<List<TlgChannel>> getChats(@RequestParam("phone") String phone) {
+        List<TlgChannel> sortedChannels = tlgInteractionCgService.getSortedChannels(phone);
+        return ResponseEntity.ok(sortedChannels);
     }
 
     @GetMapping(value = "/test", produces = "text/html;charset=UTF-8")
