@@ -28,6 +28,7 @@ public class UpdatesHandler implements Client.ResultHandler {
     public final ConcurrentHashMap<Long, TlgChat> chats = new ConcurrentHashMap<>();
     public volatile boolean chatsInitialized = false;
     private final ConcurrentHashMap<Long, Integer> chatId2SupergroupId = new ConcurrentHashMap<>();
+    public final ConcurrentHashMap<Integer, Long> supergroupId2ChatId = new ConcurrentHashMap<>();
     public final ConcurrentHashMap<Integer, String> supergroupId2Title = new ConcurrentHashMap<>();
 
     private volatile boolean fromWaitCodeState = false;
@@ -67,6 +68,7 @@ public class UpdatesHandler implements Client.ResultHandler {
                     TdApi.ChatTypeSupergroup typeSupergroup = ((TdApi.ChatTypeSupergroup) chat.type);
                     if (typeSupergroup.isChannel) {
                         chatId2SupergroupId.put(chat.id, typeSupergroup.supergroupId);
+                        supergroupId2ChatId.put(typeSupergroup.supergroupId, chat.id);
                         supergroupId2Title.put(typeSupergroup.supergroupId, chat.title);
                     }
 

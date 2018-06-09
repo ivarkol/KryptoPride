@@ -184,10 +184,11 @@ public class TlgInteractionFgService {
             initializeChats(tlgClient);
         }
         Collection<TlgChannel> channels = tlgClient.channels.values();
-        //Перекладываем названия в каналы
+        //Перекладываем названия и id чатов в каналы
         channels.forEach(tlgChannel -> {
             String title = tlgClient.updatesHandler.supergroupId2Title.get(tlgChannel.id);
             tlgChannel.setTitle(title != null && !title.isEmpty() ? title : "unknown");
+            tlgChannel.setChatId(tlgClient.updatesHandler.supergroupId2ChatId.get(tlgChannel.id));
         });
         return channels;
     }

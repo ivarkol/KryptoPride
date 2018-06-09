@@ -9,6 +9,7 @@ public class TlgChannel implements Comparable<TlgChannel> {
 
     public final int id;
     private String title;
+    private long chatId;
 
     public void setTitle(String title) {
         this.title = title != null ? title : "unknown";
@@ -16,6 +17,14 @@ public class TlgChannel implements Comparable<TlgChannel> {
 
     public String getTitle() {
         return title;
+    }
+
+    public long getChatId() {
+        return chatId;
+    }
+
+    public void setChatId(long chatId) {
+        this.chatId = chatId;
     }
 
     public TlgChannel(int id) {
@@ -28,9 +37,9 @@ public class TlgChannel implements Comparable<TlgChannel> {
         if (o == null || getClass() != o.getClass()) return false;
         TlgChannel that = (TlgChannel) o;
         return id == that.id &&
+                chatId == that.chatId &&
                 Objects.equals(title, that.title);
     }
-
 
     @Override
     public int compareTo(TlgChannel o) {
