@@ -3,6 +3,7 @@ package ru.airiva.client.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.airiva.client.TlgClient;
+import ru.airiva.parser.Dispatcher;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.TdApi;
 import ru.airiva.vo.TlgChannel;
@@ -19,6 +20,7 @@ public class UpdatesHandler implements Client.ResultHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdatesHandler.class);
 
     private final TlgClient tlgClient;
+    private final Dispatcher dispatcher;
     private final AuthorizationRequestHandler authorizationRequestHandler;
 
     public final Exchanger<TdApi.Object> authExchanger = new Exchanger<>();
@@ -40,6 +42,7 @@ public class UpdatesHandler implements Client.ResultHandler {
     public UpdatesHandler(TlgClient tlgClient) {
         this.tlgClient = tlgClient;
         this.authorizationRequestHandler = new AuthorizationRequestHandler();
+        this.dispatcher = new Dispatcher();
     }
 
     private void setChatOrder(TlgChat tlgChat, long order) {
@@ -130,6 +133,13 @@ public class UpdatesHandler implements Client.ResultHandler {
                         tlgClient.channels.get(supergroupId).setTitle(updateChatTitle.title);
                         supergroupId2Title.put(supergroupId, updateChatTitle.title);
                     }
+                }
+                break;
+            case TdApi.UpdateNewMessage.CONSTRUCTOR:
+                try {
+                    dispatcher.dispatch(((TdApi.UpdateNewMessage) object).message, tlgClient.client);
+                } catch (Exception e) {
+                    LOGGER.error("Error while executing dispatch: " + object.toString(), e);
                 }
                 break;
         }
