@@ -2,11 +2,12 @@ package ru.airiva.service.cg;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.airiva.client.TlgClient;
-import ru.airiva.exception.TlgCheckAuthCodeBsException;
+import ru.airiva.exception.TlgDefaultBsException;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
+import ru.airiva.parser.Courier;
+import ru.airiva.parser.Parser;
 import ru.airiva.service.fg.TlgInteractionFgService;
 import ru.airiva.vo.TlgChannel;
 
@@ -25,42 +26,47 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void authorize(final String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException {
+    public void authorize(final String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException, TlgDefaultBsException {
         try {
             tlgInteractionFgService.auth(phone);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new TlgFailAuthBsException();
+            throw new TlgDefaultBsException(e);
         }
     }
 
     @Override
-    public void start(final String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException {
-
-        //Проверяем авторизацию клиента
-        final TlgClient tlgClient;
-        try {
-            tlgClient = tlgInteractionFgService.auth(phone);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new TlgFailAuthBsException();
-        }
-
-
-        //TODO parse messages
-
-    }
-
-    @Override
-    public boolean checkCode(final String phone, final String code) throws TlgNeedAuthBsException, TlgCheckAuthCodeBsException {
+    public boolean checkCode(final String phone, final String code) throws TlgNeedAuthBsException, TlgDefaultBsException {
         boolean result;
         try {
             result = tlgInteractionFgService.checkCode(phone, code);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new TlgCheckAuthCodeBsException();
+            throw new TlgDefaultBsException(e);
         }
         return result;
+    }
+
+    @Override
+    public void startParsing(final String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+
+        try {
+            tlgInteractionFgService.enableParsing(phone);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
+
+    }
+
+    @Override
+    public void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+        try {
+            tlgInteractionFgService.disableParsing(phone);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
     }
 
     @Override
@@ -69,10 +75,36 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public List<TlgChannel> getSortedChannels(String phone) {
-        List<TlgChannel> channels = new ArrayList<>(tlgInteractionFgService.getChannels(phone));
-        Collections.sort(channels);
+    public List<TlgChannel> getSortedChannels(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+        List<TlgChannel> channels;
+        try {
+            channels = new ArrayList<>(tlgInteractionFgService.getChannels(phone));
+            Collections.sort(channels);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
         return channels;
+    }
+
+    @Override
+    public void includeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+        try {
+            tlgInteractionFgService.addCourier(phone, new Courier(source, target, Parser.create(phone, source)));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
+    }
+
+    @Override
+    public void excludeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+        try {
+            tlgInteractionFgService.deleteCourier(phone, new Courier(source, target, null));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
     }
 
 }

@@ -13,7 +13,16 @@ import java.util.Set;
  */
 public class Dispatcher {
 
+    /**
+     * Активность диспетчера
+     */
+    private boolean enabled = false;
+
     private final Map<Long, Set<Courier>> courierMap;
+
+    public boolean isEnabled() {
+        return enabled;
+    }
 
     public Dispatcher() {
         this.courierMap = new HashMap<>();
@@ -57,4 +66,11 @@ public class Dispatcher {
         }
     }
 
+    public void enable() {
+        enabled = true;
+    }
+
+    public void disable() {
+        enabled = false;
+    }
 }

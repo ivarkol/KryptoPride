@@ -20,9 +20,9 @@ public class UpdatesHandler implements Client.ResultHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdatesHandler.class);
 
     private final TlgClient tlgClient;
-    private final Dispatcher dispatcher;
     private final AuthorizationRequestHandler authorizationRequestHandler;
 
+    public final Dispatcher dispatcher;
     public final Exchanger<TdApi.Object> authExchanger = new Exchanger<>();
     public final Exchanger<TdApi.Object> checkCodeExchanger = new Exchanger<>();
 
@@ -55,7 +55,9 @@ public class UpdatesHandler implements Client.ResultHandler {
 
     @Override
     public void onResult(TdApi.Object object) {
-        LOGGER.info("Incoming update: {}", object.toString());
+        if (object.getConstructor() != TdApi.UpdateUserStatus.CONSTRUCTOR) {
+            LOGGER.debug("Incoming update: {}", object.toString());
+        }
         switch (object.getConstructor()) {
             case TdApi.UpdateAuthorizationState.CONSTRUCTOR:
                 onAuthStateUpdated(((TdApi.UpdateAuthorizationState) object).authorizationState);
@@ -137,7 +139,9 @@ public class UpdatesHandler implements Client.ResultHandler {
                 break;
             case TdApi.UpdateNewMessage.CONSTRUCTOR:
                 try {
-                    dispatcher.dispatch(((TdApi.UpdateNewMessage) object).message, tlgClient.client);
+                    if (dispatcher.isEnabled()) {
+                        dispatcher.dispatch(((TdApi.UpdateNewMessage) object).message, tlgClient.client);
+                    }
                 } catch (Exception e) {
                     LOGGER.error("Error while executing dispatch: " + object.toString(), e);
                 }
@@ -146,7 +150,6 @@ public class UpdatesHandler implements Client.ResultHandler {
     }
 
     private void onAuthStateUpdated(TdApi.AuthorizationState authorizationState) {
-        LOGGER.info("AuthState: {}", authorizationState.getClass().getSimpleName());
         switch (authorizationState.getConstructor()) {
             case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
                 TdApi.TdlibParameters parameters = new TdApi.TdlibParameters();

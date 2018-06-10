@@ -1,15 +1,12 @@
 package ru.airiva.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import ru.airiva.exception.TlgCheckAuthCodeBsException;
-import ru.airiva.exception.TlgFailAuthBsException;
-import ru.airiva.exception.TlgNeedAuthBsException;
-import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.service.cg.TlgInteractionCgService;
 import ru.airiva.vo.TlgChannel;
 
@@ -30,12 +27,20 @@ public class TestController {
     ResponseEntity<String> start(@RequestParam("phone") String phone) {
         String rs;
         try {
-            tlgInteractionCgService.start(phone);
-            rs = "Start successful";
-        } catch (TlgWaitAuthCodeBsException e) {
+            tlgInteractionCgService.startParsing(phone);
+            rs = "Start parsing successful";
+        } catch (Exception e) {
             rs = e.getMessage();
-        } catch (TlgFailAuthBsException e) {
-            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
+    @GetMapping(value = "/stop", params = "phone", produces = "text/html;charset=UTF-8")
+    ResponseEntity<String> stop(@RequestParam("phone") String phone) {
+        String rs;
+        try {
+            tlgInteractionCgService.stopParsing(phone);
+            rs = "Stop parsing successful";
         } catch (Exception e) {
             rs = e.getMessage();
         }
@@ -48,10 +53,6 @@ public class TestController {
         try {
             tlgInteractionCgService.authorize(phone);
             rs = "Authorization successful";
-        } catch (TlgWaitAuthCodeBsException e) {
-            rs = e.getMessage();
-        } catch (TlgFailAuthBsException e) {
-            rs = e.getMessage();
         } catch (Exception e) {
             rs = e.getMessage();
         }
@@ -69,10 +70,6 @@ public class TestController {
             } else {
                 rs = "Code is incorrect";
             }
-        } catch (TlgNeedAuthBsException e) {
-            rs = e.getMessage();
-        } catch (TlgCheckAuthCodeBsException e) {
-            rs = e.getMessage();
         } catch (Exception e) {
             rs = e.getMessage();
         }
@@ -86,13 +83,78 @@ public class TestController {
     }
 
     @GetMapping(value = "/chats", params = {"phone"})
-    ResponseEntity<List<TlgChannel>> getChats(@RequestParam("phone") String phone) {
-        List<TlgChannel> sortedChannels = tlgInteractionCgService.getSortedChannels(phone);
-        return ResponseEntity.ok(sortedChannels);
+    ResponseEntity<Response> getChats(@RequestParam("phone") String phone) {
+        Response rs;
+        try {
+            List<TlgChannel> sortedChannels = tlgInteractionCgService.getSortedChannels(phone);
+            rs = new Response(sortedChannels);
+        } catch (Exception e) {
+            rs = new Response(e.getMessage());
+        }
+        return ResponseEntity.ok(rs);
+    }
+
+    @GetMapping(value = "/incparse")
+    ResponseEntity<String> includeParsing(@RequestParam("phone") String phone,
+                                          @RequestParam("source") long source,
+                                          @RequestParam("target") long target) {
+        String rs;
+        try {
+            tlgInteractionCgService.includeParsing(phone, source, target);
+            rs = "Parsing included successfully";
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
+    @GetMapping(value = "/exparse")
+    ResponseEntity<String> excludeParsing(@RequestParam("phone") String phone,
+                                          @RequestParam("source") long source,
+                                          @RequestParam("target") long target) {
+        String rs;
+        try {
+            tlgInteractionCgService.excludeParsing(phone, source, target);
+            rs = "Parsing excluded successfully";
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
     }
 
     @GetMapping(value = "/test", produces = "text/html;charset=UTF-8")
     ResponseEntity<String> test() {
         return ResponseEntity.ok("ТЕСТ");
     }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private class Response {
+        private List<TlgChannel> channels;
+        private String error;
+
+        public List<TlgChannel> getChannels() {
+            return channels;
+        }
+
+        public void setChannels(List<TlgChannel> channels) {
+            this.channels = channels;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
+        }
+
+        public Response(List<TlgChannel> channels) {
+            this.channels = channels;
+        }
+
+        public Response(String error) {
+            this.error = error;
+        }
+    }
+
 }

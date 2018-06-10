@@ -1,6 +1,6 @@
 package ru.airiva.service.cg;
 
-import ru.airiva.exception.TlgCheckAuthCodeBsException;
+import ru.airiva.exception.TlgDefaultBsException;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
@@ -15,14 +15,21 @@ public interface TlgInteraction {
      *
      * @param phone телефон клиента
      */
-    void authorize(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException;
+    void authorize(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException, TlgDefaultBsException;
 
     /**
      * Запуск парсинга для текущего клиента
      *
      * @param phone телефон клиента
      */
-    void start(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException;
+    void startParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+
+    /**
+     * Остановка парсинга для текущего клиента
+     *
+     * @param phone телефон клиента
+     */
+    void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
 
     /**
      * Проверка кода аутентификации клиента
@@ -31,7 +38,7 @@ public interface TlgInteraction {
      * @param phone телефон клиента
      * @return результат проверки
      */
-    boolean checkCode(String phone, String code) throws TlgNeedAuthBsException, TlgCheckAuthCodeBsException;
+    boolean checkCode(String phone, String code) throws TlgNeedAuthBsException, TlgDefaultBsException;
 
     /**
      * Логоут клиента
@@ -45,6 +52,24 @@ public interface TlgInteraction {
      *
      * @param phone телефон клиента
      */
-    List<TlgChannel> getSortedChannels(String phone);
+    List<TlgChannel> getSortedChannels(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+
+    /**
+     * Добавление парсинга из канала {@code source} в канал {@code target}
+     *
+     * @param phone телефон клиента
+     * @param source идентификатор канала источника
+     * @param target идентификатор канала потребителя
+     */
+    void includeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+
+    /**
+     * Исключение парсинга из канала {@code source} в канал {@code target}
+     *
+     * @param phone телефон клиента
+     * @param source идентификатор канала источника
+     * @param target идентификатор канала потребителя
+     */
+    void excludeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
 
 }
