@@ -90,9 +90,11 @@ public class UpdatesHandler implements Client.ResultHandler {
                         } else {
                             TlgChannel tlgChannel = tlgClient.channels.get(supergroup.id);
                             if (tlgChannel != null) {
-                                tlgChannel.setTitle(supergroup.username);
+                                tlgChannel.setUsername(supergroup.username);
                             } else {
-                                tlgClient.channels.put(supergroup.id, new TlgChannel(supergroup.id));
+                                tlgChannel = new TlgChannel(supergroup.id);
+                                tlgChannel.setUsername(supergroup.username);
+                                tlgClient.channels.put(supergroup.id, tlgChannel);
                             }
 
                         }

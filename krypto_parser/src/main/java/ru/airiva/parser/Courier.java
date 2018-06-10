@@ -48,7 +48,7 @@ public class Courier {
         client.send(new TdApi.SendMessage(target, 0, false, false, null, inputMessageText), object -> {
             switch (object.getConstructor()) {
                 case TdApi.Message.CONSTRUCTOR:
-                    LOGGER.debug("Message {} is derived", object.toString());
+                    LOGGER.debug("Message is derived: {}", object.toString());
                     break;
             }
         });
