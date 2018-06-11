@@ -2,5 +2,10 @@ version '0.0.1-SNAPSHOT'
 
 dependencies {
     compile project(":krypto_service")
-    compile 'org.apache.commons:commons-lang3:3.7'
+}
+
+test {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
 }

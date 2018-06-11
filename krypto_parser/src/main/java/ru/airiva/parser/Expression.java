@@ -15,14 +15,14 @@ public class Expression implements Comparable<Expression>{
         this.order = order;
     }
 
-    public Expression(String search, String replacement) {
-        this(search, replacement, 0);
-    }
-
     public Expression(String search, String replacement, int order) {
-        this.search = search != null ? search : "";
+        this.search = search;
         this.replacement = replacement != null ? replacement : "";
         this.order = order;
+    }
+
+    public static Expression template(String search, String replacement) {
+        return new Expression(search, replacement, 0);
     }
 
     @Override

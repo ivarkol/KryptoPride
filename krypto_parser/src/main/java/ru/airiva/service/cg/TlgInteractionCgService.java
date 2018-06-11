@@ -7,6 +7,7 @@ import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.parser.Courier;
+import ru.airiva.parser.Expression;
 import ru.airiva.parser.Parser;
 import ru.airiva.service.fg.TlgInteractionFgService;
 import ru.airiva.vo.TlgChannel;
@@ -75,7 +76,8 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public List<TlgChannel> getSortedChannels(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+    public List<TlgChannel> getSortedChannels(String phone)
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
         List<TlgChannel> channels;
         try {
             channels = new ArrayList<>(tlgInteractionFgService.getChannels(phone));
@@ -88,7 +90,8 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void includeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+    public void includeParsing(String phone, long source, long target)
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
         try {
             tlgInteractionFgService.addCourier(phone, new Courier(source, target, Parser.create(phone, source)));
         } catch (InterruptedException e) {
@@ -98,13 +101,35 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void excludeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+    public void excludeParsing(String phone, long source, long target)
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
         try {
-            tlgInteractionFgService.deleteCourier(phone, new Courier(source, target, null));
+            tlgInteractionFgService.deleteCourier(phone, Courier.template(source, target));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TlgDefaultBsException(e);
         }
     }
 
+    @Override
+    public void addParsingExpression(String phone, long source, long target, String search, String replacement, int order)
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException {
+        try {
+            tlgInteractionFgService.addExpression(phone, Courier.template(source, target), new Expression(search, replacement, order));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
+    }
+
+    @Override
+    public void removeParsingExpression(String phone, long source, long target, String search, String replacement)
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException {
+        try {
+            tlgInteractionFgService.removeExpression(phone, Courier.template(source, target), Expression.template(search, replacement));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
+    }
 }

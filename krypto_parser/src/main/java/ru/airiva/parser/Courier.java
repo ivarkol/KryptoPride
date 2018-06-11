@@ -24,12 +24,16 @@ public class Courier {
      */
     public final long target;
 
-    private final Parser parser;
+    public final Parser parser;
 
     public Courier(long source, long target, Parser parser) {
         this.source = source;
         this.target = target;
         this.parser = parser;
+    }
+
+    public static Courier template(long source, long target) {
+        return new Courier(source, target, null);
     }
 
     /**

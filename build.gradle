@@ -16,6 +16,10 @@ subprojects {
         compile 'ch.qos.logback:logback-classic:1.2.3'
         compile 'org.springframework:spring-core:5.0.6.RELEASE'
         compile 'org.springframework:spring-context:5.0.6.RELEASE'
+        compile 'org.apache.commons:commons-lang3:3.7'
+        compile 'org.apache.commons:commons-collections4:4.1'
+
+        testCompile 'org.testng:testng:6.13.1'
     }
 
 }

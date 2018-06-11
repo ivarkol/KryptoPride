@@ -122,6 +122,39 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
+    @GetMapping(value = "/addexpr")
+    ResponseEntity<String> addExpression(@RequestParam("phone") String phone,
+                                         @RequestParam("source") long source,
+                                         @RequestParam("target") long target,
+                                         @RequestParam("search") String search,
+                                         @RequestParam("replacement") String replacement,
+                                         @RequestParam("order") int order) {
+        String rs;
+        try {
+            tlgInteractionCgService.addParsingExpression(phone, source, target, search, replacement, order);
+            rs = "Expression added successfully";
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
+    @GetMapping(value = "/delexpr")
+    ResponseEntity<String> removeExpression(@RequestParam("phone") String phone,
+                                            @RequestParam("source") long source,
+                                            @RequestParam("target") long target,
+                                            @RequestParam("search") String search,
+                                            @RequestParam("replacement") String replacement) {
+        String rs;
+        try {
+            tlgInteractionCgService.removeParsingExpression(phone, source, target, search, replacement);
+            rs = "Expression removed successfully";
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
     @GetMapping(value = "/test", produces = "text/html;charset=UTF-8")
     ResponseEntity<String> test() {
         return ResponseEntity.ok("ТЕСТ");

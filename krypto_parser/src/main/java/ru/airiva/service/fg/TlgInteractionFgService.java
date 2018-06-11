@@ -4,11 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import ru.airiva.client.TlgClient;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.parser.Courier;
+import ru.airiva.parser.Expression;
 import ru.airiva.service.da.TlgInteractionDaService;
 import ru.airiva.tdlib.TdApi;
 import ru.airiva.vo.TlgChannel;
@@ -254,6 +256,8 @@ public class TlgInteractionFgService {
      * @param courier курьер
      */
     public void addCourier(final String phone, final Courier courier) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        if (courier == null) return;
+        Assert.notNull(courier.parser, "У курьера должен быть шаблон");
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -285,14 +289,14 @@ public class TlgInteractionFgService {
      * Удаление курьера из диспетчера
      *
      * @param phone телефон клиента
-     * @param courier курьер
+     * @param template шаблон, по которому нужно удалить курьера
      */
-    public void deleteCourier(final String phone, final Courier courier) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void deleteCourier(final String phone, final Courier template) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
             TlgClient tlgClient = checkAuth(phone);
-            tlgClient.updatesHandler.dispatcher.deleteCourier(courier);
+            tlgClient.updatesHandler.dispatcher.deleteCourier(template);
         } finally {
             lockByPhone.unlock();
         }
@@ -302,7 +306,7 @@ public class TlgInteractionFgService {
      * Удаление набора курьеров из диспетчера
      *
      * @param phone телефон клиента
-     * @param couriers коллекция курьеров
+     * @param couriers коллекция шаблонов курьеров для удаления
      */
     public void deleteCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
         Lock lockByPhone = getLockByPhone(phone);
@@ -310,6 +314,48 @@ public class TlgInteractionFgService {
         try {
             TlgClient tlgClient = checkAuth(phone);
             couriers.forEach(tlgClient.updatesHandler.dispatcher::deleteCourier);
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Добавление шаблона для парсинга курьеру клиента
+     *
+     * @param phone номер телефона клиента
+     * @param template шаблон курьера для поиска курьера
+     * @param expression шаблон для добавления в курьер
+     */
+    public void addExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            Courier courier = tlgClient.updatesHandler.dispatcher.findCourier(template);
+            if (courier != null && courier.parser != null) {
+                courier.parser.addExpression(expression);
+            }
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Удаление шаблона для парсинга из курьера клиента
+     *
+     * @param phone нормер телефона клиента
+     * @param template шаблон курьера для поиска курьера
+     * @param expression шаблон для удаления из курьера
+     */
+    public void removeExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            Courier courier = tlgClient.updatesHandler.dispatcher.findCourier(template);
+            if (courier != null && courier.parser != null) {
+                courier.parser.removeExpression(expression);
+            }
         } finally {
             lockByPhone.unlock();
         }

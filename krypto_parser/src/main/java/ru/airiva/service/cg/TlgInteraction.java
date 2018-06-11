@@ -52,24 +52,52 @@ public interface TlgInteraction {
      *
      * @param phone телефон клиента
      */
-    List<TlgChannel> getSortedChannels(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+    List<TlgChannel> getSortedChannels(String phone)
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
 
     /**
      * Добавление парсинга из канала {@code source} в канал {@code target}
      *
-     * @param phone телефон клиента
+     * @param phone  телефон клиента
      * @param source идентификатор канала источника
      * @param target идентификатор канала потребителя
      */
-    void includeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+    void includeParsing(String phone, long source, long target)
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
 
     /**
      * Исключение парсинга из канала {@code source} в канал {@code target}
      *
-     * @param phone телефон клиента
+     * @param phone  телефон клиента
      * @param source идентификатор канала источника
      * @param target идентификатор канала потребителя
      */
-    void excludeParsing(String phone, long source, long target) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+    void excludeParsing(String phone, long source, long target)
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+
+    /**
+     * Добавление шаблона для парсинга из канала-источника в канал-потребитель для текущего клиента
+     *
+     * @param phone       телефон текущего клиента
+     * @param source      идентификатор канала-источника
+     * @param target      идентификатор канала-потребителя
+     * @param search      шаблон для поиска
+     * @param replacement шаблон для замены
+     * @param order       позиция в списке шаблонов курьера
+     */
+    void addParsingExpression(String phone, long source, long target, String search, String replacement, int order)
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
+
+    /**
+     * Удаление шаблона для парсинга из канала-источника в канал-потребитель для текущего клиента
+     *
+     * @param phone       телефон текущего клиента
+     * @param source      идентификатор канала-источника
+     * @param target      идентификатор канала-потребителя
+     * @param search      шаблон для поиска
+     * @param replacement шаблон для замены
+     */
+    void removeParsingExpression(String phone, long source, long target, String search, String replacement)
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
 
 }
