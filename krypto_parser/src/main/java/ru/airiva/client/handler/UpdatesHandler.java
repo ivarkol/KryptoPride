@@ -11,6 +11,7 @@ import ru.airiva.vo.TlgChat;
 
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 
 import static java.lang.System.getProperty;
@@ -25,6 +26,7 @@ public class UpdatesHandler implements Client.ResultHandler {
     public final Dispatcher dispatcher;
     public final Exchanger<TdApi.Object> authExchanger = new Exchanger<>();
     public final Exchanger<TdApi.Object> checkCodeExchanger = new Exchanger<>();
+    public final CountDownLatch logoutLatch = new CountDownLatch(1);
 
     public final TreeSet<TlgChat> orderedChats = new TreeSet<>();
     public final ConcurrentHashMap<Long, TlgChat> chats = new ConcurrentHashMap<>();
@@ -207,6 +209,7 @@ public class UpdatesHandler implements Client.ResultHandler {
                 break;
             case TdApi.AuthorizationStateClosed.CONSTRUCTOR:
                 LOGGER.debug("Client {} successful closed", tlgClient.phone);
+                logoutLatch.countDown();
                 break;
             default:
                 LOGGER.error("Unsupported authorization state: {}", authorizationState);

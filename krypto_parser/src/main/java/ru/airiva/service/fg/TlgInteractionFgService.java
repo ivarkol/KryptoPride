@@ -181,6 +181,12 @@ public class TlgInteractionFgService {
                             break;
                     }
                 });
+                try {
+                    tlgClient.updatesHandler.logoutLatch.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOGGER.error("Logout was interrupted", e);
+                }
                 CLIENTS.remove(phone);
             }
         } finally {
