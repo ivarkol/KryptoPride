@@ -97,10 +97,11 @@ public class TestController {
     @GetMapping(value = "/incparse")
     ResponseEntity<String> includeParsing(@RequestParam("phone") String phone,
                                           @RequestParam("source") long source,
-                                          @RequestParam("target") long target) {
+                                          @RequestParam("target") long target,
+                                          @RequestParam("delay") long delay) {
         String rs;
         try {
-            tlgInteractionCgService.includeParsing(phone, source, target);
+            tlgInteractionCgService.includeParsing(phone, source, target, delay);
             rs = "Parsing included successfully";
         } catch (Exception e) {
             rs = e.getMessage();
@@ -154,6 +155,22 @@ public class TestController {
         }
         return ResponseEntity.ok(rs);
     }
+
+    @GetMapping(value = "/delay")
+    ResponseEntity<String> changeDelay(@RequestParam("phone") String phone,
+                                            @RequestParam("source") long source,
+                                            @RequestParam("target") long target,
+                                            @RequestParam("delay") long delay) {
+        String rs;
+        try {
+            tlgInteractionCgService.setMessageSendingDelay(phone, source, target, delay);
+            rs = "Message sending delay changed successfully";
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
 
     @GetMapping(value = "/test", produces = "text/html;charset=UTF-8")
     ResponseEntity<String> test() {

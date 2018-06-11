@@ -23,17 +23,26 @@ public class Courier {
      * Идентификатор чата-получателя сообщения
      */
     public final long target;
+    /**
+     * Задержка перед отправкой сообщения
+     */
+    private volatile long delay;
 
     public final Parser parser;
 
-    public Courier(long source, long target, Parser parser) {
+    public void setDelay(long delay) {
+        this.delay = delay*1000;
+    }
+
+    public Courier(long source, long target, Parser parser, long delay) {
         this.source = source;
         this.target = target;
         this.parser = parser;
+        this.delay = delay*1000;
     }
 
     public static Courier template(long source, long target) {
-        return new Courier(source, target, null);
+        return new Courier(source, target, null, 0);
     }
 
     /**
@@ -44,6 +53,15 @@ public class Courier {
      */
     @Async
     public void send(final String message, final Client client) {
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Message sending was interrupted:");
+            LOGGER.error("Message: {}", message);
+            LOGGER.error("From: {}", source);
+            LOGGER.error("To: {}", target);
+        }
         final String parsedMessage = parser.parse(message);
         TdApi.InputMessageText inputMessageText = new TdApi.InputMessageText(
                 new TdApi.FormattedText(parsedMessage, null),

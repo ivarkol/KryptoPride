@@ -90,10 +90,10 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void includeParsing(String phone, long source, long target)
+    public void includeParsing(String phone, long source, long target, long delay)
             throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
         try {
-            tlgInteractionFgService.addCourier(phone, new Courier(source, target, Parser.create(phone, source)));
+            tlgInteractionFgService.addCourier(phone, new Courier(source, target, Parser.create(phone, source), delay));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TlgDefaultBsException(e);
@@ -105,6 +105,17 @@ public class TlgInteractionCgService implements TlgInteraction {
             throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
         try {
             tlgInteractionFgService.deleteCourier(phone, Courier.template(source, target));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
+    }
+
+    @Override
+    public void setMessageSendingDelay(String phone, long source, long target, long delay)
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException {
+        try {
+            tlgInteractionFgService.setCourierDelay(phone, Courier.template(source, target), delay);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TlgDefaultBsException(e);

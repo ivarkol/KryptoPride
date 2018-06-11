@@ -61,8 +61,9 @@ public interface TlgInteraction {
      * @param phone  телефон клиента
      * @param source идентификатор канала источника
      * @param target идентификатор канала потребителя
+     * @param delay  задержка перед отправкой сообщения в секундах
      */
-    void includeParsing(String phone, long source, long target)
+    void includeParsing(String phone, long source, long target, long delay)
             throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
 
     /**
@@ -74,6 +75,17 @@ public interface TlgInteraction {
      */
     void excludeParsing(String phone, long source, long target)
             throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+
+    /**
+     * Изменение задержки отправки сообщения из канала {@code source} в канал {@code target}
+     *
+     * @param phone  телефон клиента
+     * @param source идентификатор канала источника
+     * @param target идентификатор канала потребителя
+     * @param delay  задержка отправки сообщения
+     */
+    void setMessageSendingDelay(String phone, long source, long target, long delay)
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
 
     /**
      * Добавление шаблона для парсинга из канала-источника в канал-потребитель для текущего клиента

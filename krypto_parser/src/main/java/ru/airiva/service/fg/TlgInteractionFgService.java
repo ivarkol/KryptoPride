@@ -61,6 +61,7 @@ public class TlgInteractionFgService {
         switch (authorizationState) {
             case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
                 //Если клиент ждет код
+                //TODO добавить повторную отправку кода
                 throw new TlgWaitAuthCodeBsException();
             case TdApi.AuthorizationStateReady.CONSTRUCTOR:
                 //Если клиент авторизован
@@ -314,6 +315,26 @@ public class TlgInteractionFgService {
         try {
             TlgClient tlgClient = checkAuth(phone);
             couriers.forEach(tlgClient.updatesHandler.dispatcher::deleteCourier);
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Изменение времени задержки отправки сообщения курьером текущего клиента
+     *
+     * @param phone номер телефона клиента
+     * @param delay задержка отправки сообщения
+     */
+    public void setCourierDelay(final String phone, final Courier template, final long delay) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            Courier courier = tlgClient.updatesHandler.dispatcher.findCourier(template);
+            if (courier != null) {
+                courier.setDelay(delay);
+            }
         } finally {
             lockByPhone.unlock();
         }

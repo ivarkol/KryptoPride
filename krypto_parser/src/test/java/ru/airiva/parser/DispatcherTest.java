@@ -32,7 +32,7 @@ public class DispatcherTest {
 
         long source = 1;
         long target = 2;
-        Courier courier = new Courier(source, target, parser);
+        Courier courier = new Courier(source, target, parser, 0);
         dispatcher.putCourier(courier);
 
         Courier template = Courier.template(source, target);
@@ -64,7 +64,7 @@ public class DispatcherTest {
 
         long source = 1;
         long target = 2;
-        Courier courier = new Courier(source, target, parser);
+        Courier courier = new Courier(source, target, parser, 0);
         dispatcher.putCourier(courier);
 
         Courier template = Courier.template(source, 3);
