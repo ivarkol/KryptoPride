@@ -143,4 +143,16 @@ public class TlgInteractionCgService implements TlgInteraction {
             throw new TlgDefaultBsException(e);
         }
     }
+
+    @Override
+    public String resendCode(String phone) throws TlgNeedAuthBsException, TlgDefaultBsException {
+        String codeType;
+        try {
+            codeType = tlgInteractionFgService.resendCode(phone);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new TlgDefaultBsException(e);
+        }
+        return codeType;
+    }
 }

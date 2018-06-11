@@ -160,6 +160,52 @@ public class TlgInteractionFgService {
     }
 
     /**
+     * Повторная отправка кода аутентификации
+     *
+     * @param phone телефон клиента
+     * @return тип кода (смс, чат)
+     */
+    public String resendCode(String phone) throws InterruptedException, TlgNeedAuthBsException {
+        String codeType = "unknown";
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            checkAuth(phone);
+        } catch (TlgWaitAuthCodeBsException e) {
+            //Код отправляем только, если клиент в статусе ожидания кода
+            TlgClient tlgClient = CLIENTS.get(phone);
+            tlgClient.client.send(new TdApi.ResendAuthenticationCode(), object -> {
+                switch (object.getConstructor()) {
+                    case TdApi.Ok.CONSTRUCTOR:
+                        LOGGER.debug("Authentication code resend successful");
+                        break;
+                    case TdApi.Error.CONSTRUCTOR:
+                        LOGGER.warn("Authentication code resend unsuccessful");
+                        break;
+                    default:
+                        LOGGER.warn("When authentication code resend receive wrong response from TDLib: {}", object);
+                        break;
+                }
+            });
+            TdApi.Object exchange = tlgClient.updatesHandler.authExchanger.exchange(null);
+            if (exchange.getConstructor() == TdApi.AuthorizationStateWaitCode.CONSTRUCTOR) {
+                TdApi.AuthorizationStateWaitCode authorizationStateWaitCode = ((TdApi.AuthorizationStateWaitCode) exchange);
+                switch (authorizationStateWaitCode.codeInfo.type.getConstructor()) {
+                    case TdApi.AuthenticationCodeTypeSms.CONSTRUCTOR:
+                        codeType = "SMS";
+                        break;
+                    case TdApi.AuthenticationCodeTypeTelegramMessage.CONSTRUCTOR:
+                        codeType = "Telegram message";
+                        break;
+                }
+            }
+        } finally {
+            lockByPhone.unlock();
+        }
+        return codeType;
+    }
+
+    /**
      * Логоут клиента
      *
      * @param phone телефон клиента
@@ -295,7 +341,7 @@ public class TlgInteractionFgService {
     /**
      * Удаление курьера из диспетчера
      *
-     * @param phone телефон клиента
+     * @param phone    телефон клиента
      * @param template шаблон, по которому нужно удалить курьера
      */
     public void deleteCourier(final String phone, final Courier template) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
@@ -312,7 +358,7 @@ public class TlgInteractionFgService {
     /**
      * Удаление набора курьеров из диспетчера
      *
-     * @param phone телефон клиента
+     * @param phone    телефон клиента
      * @param couriers коллекция шаблонов курьеров для удаления
      */
     public void deleteCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
@@ -349,8 +395,8 @@ public class TlgInteractionFgService {
     /**
      * Добавление шаблона для парсинга курьеру клиента
      *
-     * @param phone номер телефона клиента
-     * @param template шаблон курьера для поиска курьера
+     * @param phone      номер телефона клиента
+     * @param template   шаблон курьера для поиска курьера
      * @param expression шаблон для добавления в курьер
      */
     public void addExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
@@ -370,8 +416,8 @@ public class TlgInteractionFgService {
     /**
      * Удаление шаблона для парсинга из курьера клиента
      *
-     * @param phone нормер телефона клиента
-     * @param template шаблон курьера для поиска курьера
+     * @param phone      нормер телефона клиента
+     * @param template   шаблон курьера для поиска курьера
      * @param expression шаблон для удаления из курьера
      */
     public void removeExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {

@@ -112,4 +112,11 @@ public interface TlgInteraction {
     void removeParsingExpression(String phone, long source, long target, String search, String replacement)
             throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
 
+    /**
+     * Повторная отправка кода аутентификации
+     *
+     * @param phone телефон клиента
+     * @return тип кода (смс, чат)
+     */
+    String resendCode(String phone) throws TlgNeedAuthBsException, TlgDefaultBsException;
 }

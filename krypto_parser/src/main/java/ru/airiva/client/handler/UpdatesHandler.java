@@ -181,6 +181,7 @@ public class UpdatesHandler implements Client.ResultHandler {
                     authExchanger.exchange(authorizationState);
                 } catch (InterruptedException e) {
                     LOGGER.info("AuthExchanger was interrupted from code waiting step", e);
+                    Thread.currentThread().interrupt();
                 }
                 break;
             }
