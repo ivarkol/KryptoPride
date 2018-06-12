@@ -1,9 +1,6 @@
 package ru.airiva.service.cg;
 
-import ru.airiva.exception.TlgDefaultBsException;
-import ru.airiva.exception.TlgFailAuthBsException;
-import ru.airiva.exception.TlgNeedAuthBsException;
-import ru.airiva.exception.TlgWaitAuthCodeBsException;
+import ru.airiva.exception.*;
 import ru.airiva.vo.TlgChannel;
 
 import java.util.List;
@@ -15,21 +12,21 @@ public interface TlgInteraction {
      *
      * @param phone телефон клиента
      */
-    void authorize(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException, TlgDefaultBsException;
+    void authorize(String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Запуск парсинга для текущего клиента
      *
      * @param phone телефон клиента
      */
-    void startParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+    void startParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Остановка парсинга для текущего клиента
      *
      * @param phone телефон клиента
      */
-    void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+    void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Проверка кода аутентификации клиента
@@ -38,7 +35,7 @@ public interface TlgInteraction {
      * @param phone телефон клиента
      * @return результат проверки
      */
-    boolean checkCode(String phone, String code) throws TlgNeedAuthBsException, TlgDefaultBsException;
+    boolean checkCode(String phone, String code) throws TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Логоут клиента
@@ -53,7 +50,7 @@ public interface TlgInteraction {
      * @param phone телефон клиента
      */
     List<TlgChannel> getSortedChannels(String phone)
-            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Добавление парсинга из канала {@code source} в канал {@code target}
@@ -64,7 +61,7 @@ public interface TlgInteraction {
      * @param delay  задержка перед отправкой сообщения в секундах
      */
     void includeParsing(String phone, long source, long target, long delay)
-            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Исключение парсинга из канала {@code source} в канал {@code target}
@@ -74,7 +71,7 @@ public interface TlgInteraction {
      * @param target идентификатор канала потребителя
      */
     void excludeParsing(String phone, long source, long target)
-            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException;
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Изменение задержки отправки сообщения из канала {@code source} в канал {@code target}
@@ -85,7 +82,7 @@ public interface TlgInteraction {
      * @param delay  задержка отправки сообщения
      */
     void setMessageSendingDelay(String phone, long source, long target, long delay)
-            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Добавление шаблона для парсинга из канала-источника в канал-потребитель для текущего клиента
@@ -98,7 +95,7 @@ public interface TlgInteraction {
      * @param order       позиция в списке шаблонов курьера
      */
     void addParsingExpression(String phone, long source, long target, String search, String replacement, int order)
-            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Удаление шаблона для парсинга из канала-источника в канал-потребитель для текущего клиента
@@ -110,7 +107,7 @@ public interface TlgInteraction {
      * @param replacement шаблон для замены
      */
     void removeParsingExpression(String phone, long source, long target, String search, String replacement)
-            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException;
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
      * Повторная отправка кода аутентификации
@@ -118,5 +115,5 @@ public interface TlgInteraction {
      * @param phone телефон клиента
      * @return тип кода (смс, чат)
      */
-    String resendCode(String phone) throws TlgNeedAuthBsException, TlgDefaultBsException;
+    String resendCode(String phone) throws TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 }

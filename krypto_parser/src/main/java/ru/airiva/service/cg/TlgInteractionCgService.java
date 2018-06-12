@@ -2,10 +2,7 @@ package ru.airiva.service.cg;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.airiva.exception.TlgDefaultBsException;
-import ru.airiva.exception.TlgFailAuthBsException;
-import ru.airiva.exception.TlgNeedAuthBsException;
-import ru.airiva.exception.TlgWaitAuthCodeBsException;
+import ru.airiva.exception.*;
 import ru.airiva.parser.Courier;
 import ru.airiva.parser.Expression;
 import ru.airiva.parser.Parser;
@@ -27,7 +24,7 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void authorize(final String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException, TlgDefaultBsException {
+    public void authorize(final String phone) throws TlgWaitAuthCodeBsException, TlgFailAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.auth(phone);
         } catch (InterruptedException e) {
@@ -37,7 +34,7 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public boolean checkCode(final String phone, final String code) throws TlgNeedAuthBsException, TlgDefaultBsException {
+    public boolean checkCode(final String phone, final String code) throws TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         boolean result;
         try {
             result = tlgInteractionFgService.checkCode(phone, code);
@@ -49,7 +46,7 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void startParsing(final String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+    public void startParsing(final String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
 
         try {
             tlgInteractionFgService.enableParsing(phone);
@@ -61,7 +58,7 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+    public void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.disableParsing(phone);
         } catch (InterruptedException e) {
@@ -77,7 +74,7 @@ public class TlgInteractionCgService implements TlgInteraction {
 
     @Override
     public List<TlgChannel> getSortedChannels(String phone)
-            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         List<TlgChannel> channels;
         try {
             channels = new ArrayList<>(tlgInteractionFgService.getChannels(phone));
@@ -91,7 +88,7 @@ public class TlgInteractionCgService implements TlgInteraction {
 
     @Override
     public void includeParsing(String phone, long source, long target, long delay)
-            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.addCourier(phone, new Courier(source, target, Parser.create(phone, source), delay));
         } catch (InterruptedException e) {
@@ -102,7 +99,7 @@ public class TlgInteractionCgService implements TlgInteraction {
 
     @Override
     public void excludeParsing(String phone, long source, long target)
-            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException {
+            throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.deleteCourier(phone, Courier.template(source, target));
         } catch (InterruptedException e) {
@@ -113,7 +110,7 @@ public class TlgInteractionCgService implements TlgInteraction {
 
     @Override
     public void setMessageSendingDelay(String phone, long source, long target, long delay)
-            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException {
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.setCourierDelay(phone, Courier.template(source, target), delay);
         } catch (InterruptedException e) {
@@ -124,7 +121,7 @@ public class TlgInteractionCgService implements TlgInteraction {
 
     @Override
     public void addParsingExpression(String phone, long source, long target, String search, String replacement, int order)
-            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException {
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.addExpression(phone, Courier.template(source, target), new Expression(search, replacement, order));
         } catch (InterruptedException e) {
@@ -135,7 +132,7 @@ public class TlgInteractionCgService implements TlgInteraction {
 
     @Override
     public void removeParsingExpression(String phone, long source, long target, String search, String replacement)
-            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException {
+            throws TlgNeedAuthBsException, TlgWaitAuthCodeBsException, TlgDefaultBsException, TlgTimeoutBsException {
         try {
             tlgInteractionFgService.removeExpression(phone, Courier.template(source, target), Expression.template(search, replacement));
         } catch (InterruptedException e) {
@@ -145,7 +142,7 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
-    public String resendCode(String phone) throws TlgNeedAuthBsException, TlgDefaultBsException {
+    public String resendCode(String phone) throws TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         String codeType;
         try {
             codeType = tlgInteractionFgService.resendCode(phone);

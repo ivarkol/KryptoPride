@@ -8,9 +8,11 @@ import org.springframework.util.Assert;
 import ru.airiva.client.TlgClient;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
+import ru.airiva.exception.TlgTimeoutBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.parser.Courier;
 import ru.airiva.parser.Expression;
+import ru.airiva.properties.Timeouts;
 import ru.airiva.service.da.TlgInteractionDaService;
 import ru.airiva.tdlib.TdApi;
 import ru.airiva.vo.TlgChannel;
@@ -19,8 +21,11 @@ import ru.airiva.vo.TlgChat;
 import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author Ivan
@@ -37,12 +42,17 @@ public class TlgInteractionFgService {
     private static final Map<String, TlgClient> CLIENTS = new HashMap<>();
 
     private TlgInteractionDaService tlgInteractionDaService;
+    private Timeouts timeouts;
 
     @Autowired
     public void setTlgInteractionDaService(TlgInteractionDaService tlgInteractionDaService) {
         this.tlgInteractionDaService = tlgInteractionDaService;
     }
 
+    @Autowired
+    public void setTimeouts(Timeouts timeouts) {
+        this.timeouts = timeouts;
+    }
 
     /**
      * Проверка авторизации клиента
@@ -53,7 +63,7 @@ public class TlgInteractionFgService {
      * @throws InterruptedException       если поток был прерван
      * @throws TlgWaitAuthCodeBsException если авторизация клиента на шаге подтверждения кода аутентификации
      */
-    private TlgClient checkAuth(final String phone) throws TlgNeedAuthBsException, InterruptedException, TlgWaitAuthCodeBsException {
+    private TlgClient checkAuth(final String phone) throws TlgNeedAuthBsException, InterruptedException, TlgWaitAuthCodeBsException, TlgTimeoutBsException {
         TlgClient tlgClient = CLIENTS.get(phone);
         if (tlgClient == null) throw new TlgNeedAuthBsException();
         //Запрашиваем статус авторизации клиента
@@ -61,7 +71,6 @@ public class TlgInteractionFgService {
         switch (authorizationState) {
             case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
                 //Если клиент ждет код
-                //TODO добавить повторную отправку кода
                 throw new TlgWaitAuthCodeBsException();
             case TdApi.AuthorizationStateReady.CONSTRUCTOR:
                 //Если клиент авторизован
@@ -80,8 +89,9 @@ public class TlgInteractionFgService {
      * @throws TlgWaitAuthCodeBsException если авторизация клиента на шаге подтверждения кода аутентификации
      * @throws InterruptedException       если поток был прерван
      * @throws TlgFailAuthBsException     если во время авторизации сервер вернул ошибку
+     * @throws TlgTimeoutBsException      если время ожидания истекло
      */
-    public void auth(final String phone) throws TlgWaitAuthCodeBsException, InterruptedException, TlgFailAuthBsException {
+    public void auth(final String phone) throws TlgWaitAuthCodeBsException, InterruptedException, TlgFailAuthBsException, TlgTimeoutBsException {
 
 
         Lock lockByPhone = getLockByPhone(phone);
@@ -93,7 +103,12 @@ public class TlgInteractionFgService {
             } catch (TlgNeedAuthBsException e) {
                 //Авторизовываем заново
                 TlgClient tlgClient = new TlgClient(phone);
-                TdApi.Object authStep = tlgClient.updatesHandler.authExchanger.exchange(null);
+                TdApi.Object authStep;
+                try {
+                    authStep = tlgClient.updatesHandler.authExchanger.exchange(null, timeouts.auth, SECONDS);
+                } catch (TimeoutException te) {
+                    throw new TlgTimeoutBsException("Истекло время ожидания авторизации", te);
+                }
                 switch (authStep.getConstructor()) {
                     case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
                         CLIENTS.put(phone, tlgClient);
@@ -119,7 +134,7 @@ public class TlgInteractionFgService {
      * @param code  код авторизации
      * @return результат проверки
      */
-    public boolean checkCode(final String phone, final String code) throws TlgNeedAuthBsException, InterruptedException {
+    public boolean checkCode(final String phone, final String code) throws TlgNeedAuthBsException, InterruptedException, TlgTimeoutBsException {
         boolean result;
         Lock lockByPhone = getLockByPhone(phone);
 
@@ -137,7 +152,12 @@ public class TlgInteractionFgService {
                         new TdApi.CheckAuthenticationCode(code, "", ""),
                         tlgClient.checkAuthenticationCodeHandler);
 
-                TdApi.Object state = tlgClient.updatesHandler.checkCodeExchanger.exchange(null);
+                TdApi.Object state;
+                try {
+                    state = tlgClient.updatesHandler.checkCodeExchanger.exchange(null, timeouts.codeCheck, SECONDS);
+                } catch (TimeoutException e1) {
+                    throw new TlgTimeoutBsException("Истекло время ожидания проверки кода аутентификации", e);
+                }
                 switch (state.getConstructor()) {
                     case TdApi.AuthorizationStateReady.CONSTRUCTOR:
                         result = true;
@@ -165,7 +185,7 @@ public class TlgInteractionFgService {
      * @param phone телефон клиента
      * @return тип кода (смс, чат)
      */
-    public String resendCode(String phone) throws InterruptedException, TlgNeedAuthBsException {
+    public String resendCode(String phone) throws InterruptedException, TlgNeedAuthBsException, TlgTimeoutBsException {
         String codeType = "unknown";
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
@@ -187,7 +207,12 @@ public class TlgInteractionFgService {
                         break;
                 }
             });
-            TdApi.Object exchange = tlgClient.updatesHandler.authExchanger.exchange(null);
+            TdApi.Object exchange;
+            try {
+                exchange = tlgClient.updatesHandler.authExchanger.exchange(null, timeouts.codeResend, SECONDS);
+            } catch (TimeoutException te) {
+                throw new TlgTimeoutBsException("Истекло время ожидания при отправке кода аутентификации", te);
+            }
             if (exchange.getConstructor() == TdApi.AuthorizationStateWaitCode.CONSTRUCTOR) {
                 TdApi.AuthorizationStateWaitCode authorizationStateWaitCode = ((TdApi.AuthorizationStateWaitCode) exchange);
                 switch (authorizationStateWaitCode.codeInfo.type.getConstructor()) {
@@ -228,7 +253,7 @@ public class TlgInteractionFgService {
                     }
                 });
                 try {
-                    tlgClient.updatesHandler.logoutLatch.await();
+                    tlgClient.updatesHandler.logoutLatch.await(timeouts.logout, SECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     LOGGER.error("Logout was interrupted", e);
@@ -246,7 +271,7 @@ public class TlgInteractionFgService {
      * @param phone телефон клиента
      * @return набор идентификаторов чатов
      */
-    public Collection<TlgChannel> getChannels(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public Collection<TlgChannel> getChannels(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
 
         lockByPhone.lock();
@@ -275,7 +300,7 @@ public class TlgInteractionFgService {
      *
      * @param phone телефон клиента
      */
-    public void enableParsing(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void enableParsing(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -291,7 +316,7 @@ public class TlgInteractionFgService {
      *
      * @param phone телефон клиента
      */
-    public void disableParsing(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void disableParsing(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -308,7 +333,7 @@ public class TlgInteractionFgService {
      * @param phone   номер телефона клиента
      * @param courier курьер
      */
-    public void addCourier(final String phone, final Courier courier) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void addCourier(final String phone, final Courier courier) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         if (courier == null) return;
         Assert.notNull(courier.parser, "У курьера должен быть шаблон");
         Lock lockByPhone = getLockByPhone(phone);
@@ -327,7 +352,7 @@ public class TlgInteractionFgService {
      * @param phone    номер телефона клиента
      * @param couriers набор курьеров
      */
-    public void addCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void addCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -344,7 +369,7 @@ public class TlgInteractionFgService {
      * @param phone    телефон клиента
      * @param template шаблон, по которому нужно удалить курьера
      */
-    public void deleteCourier(final String phone, final Courier template) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void deleteCourier(final String phone, final Courier template) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -361,7 +386,7 @@ public class TlgInteractionFgService {
      * @param phone    телефон клиента
      * @param couriers коллекция шаблонов курьеров для удаления
      */
-    public void deleteCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void deleteCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -378,7 +403,7 @@ public class TlgInteractionFgService {
      * @param phone номер телефона клиента
      * @param delay задержка отправки сообщения
      */
-    public void setCourierDelay(final String phone, final Courier template, final long delay) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void setCourierDelay(final String phone, final Courier template, final long delay) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -399,7 +424,7 @@ public class TlgInteractionFgService {
      * @param template   шаблон курьера для поиска курьера
      * @param expression шаблон для добавления в курьер
      */
-    public void addExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void addExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -420,7 +445,7 @@ public class TlgInteractionFgService {
      * @param template   шаблон курьера для поиска курьера
      * @param expression шаблон для удаления из курьера
      */
-    public void removeExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+    public void removeExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgTimeoutBsException {
         Lock lockByPhone = getLockByPhone(phone);
         lockByPhone.lock();
         try {
@@ -484,13 +509,15 @@ public class TlgInteractionFgService {
                                     tlgClient.updatesHandler.chatsInitialized = true;
                                 }
                                 try {
-                                    chatsBarrier.await();
+                                    chatsBarrier.await(timeouts.getChats, SECONDS);
                                 } catch (InterruptedException e) {
                                     Thread.currentThread().interrupt();
                                     chatsBarrier.reset();
                                     LOGGER.error("Initialize chats was interrupted", e);
                                 } catch (BrokenBarrierException e) {
                                     LOGGER.error("Chats initialize barrier was broken", e);
+                                } catch (TimeoutException e) {
+                                    LOGGER.warn("Chats waiting timeout elapsed", e);
                                 }
                                 break;
                             default:
@@ -500,13 +527,15 @@ public class TlgInteractionFgService {
                 }
             }
             try {
-                chatsBarrier.await();
+                chatsBarrier.await(timeouts.getChats, SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOGGER.error("Chats initialize was interrupted", e);
                 chatsBarrier.reset();
             } catch (BrokenBarrierException e) {
                 LOGGER.error("Chats initialize barrier was broken", e);
+            } catch (TimeoutException e) {
+                LOGGER.warn("Chats waiting timeout elapsed", e);
             }
         }
         tlgClient.updatesHandler.chats.clear();
