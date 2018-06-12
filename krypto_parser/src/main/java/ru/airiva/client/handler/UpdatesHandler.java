@@ -3,6 +3,7 @@ package ru.airiva.client.handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.airiva.client.TlgClient;
+import ru.airiva.parser.Dispatcher;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.TdApi;
 import ru.airiva.vo.TlgChannel;
@@ -10,6 +11,7 @@ import ru.airiva.vo.TlgChat;
 
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
 
 import static java.lang.System.getProperty;
@@ -21,8 +23,10 @@ public class UpdatesHandler implements Client.ResultHandler {
     private final TlgClient tlgClient;
     private final AuthorizationRequestHandler authorizationRequestHandler;
 
+    public final Dispatcher dispatcher;
     public final Exchanger<TdApi.Object> authExchanger = new Exchanger<>();
     public final Exchanger<TdApi.Object> checkCodeExchanger = new Exchanger<>();
+    public final CountDownLatch logoutLatch = new CountDownLatch(1);
 
     public final TreeSet<TlgChat> orderedChats = new TreeSet<>();
     public final ConcurrentHashMap<Long, TlgChat> chats = new ConcurrentHashMap<>();
@@ -40,6 +44,7 @@ public class UpdatesHandler implements Client.ResultHandler {
     public UpdatesHandler(TlgClient tlgClient) {
         this.tlgClient = tlgClient;
         this.authorizationRequestHandler = new AuthorizationRequestHandler();
+        this.dispatcher = new Dispatcher();
     }
 
     private void setChatOrder(TlgChat tlgChat, long order) {
@@ -52,7 +57,9 @@ public class UpdatesHandler implements Client.ResultHandler {
 
     @Override
     public void onResult(TdApi.Object object) {
-        LOGGER.info("Incoming update: {}", object.toString());
+        if (object.getConstructor() != TdApi.UpdateUserStatus.CONSTRUCTOR) {
+            LOGGER.debug("Incoming update: {}", object.toString());
+        }
         switch (object.getConstructor()) {
             case TdApi.UpdateAuthorizationState.CONSTRUCTOR:
                 onAuthStateUpdated(((TdApi.UpdateAuthorizationState) object).authorizationState);
@@ -85,9 +92,11 @@ public class UpdatesHandler implements Client.ResultHandler {
                         } else {
                             TlgChannel tlgChannel = tlgClient.channels.get(supergroup.id);
                             if (tlgChannel != null) {
-                                tlgChannel.setTitle(supergroup.username);
+                                tlgChannel.setUsername(supergroup.username);
                             } else {
-                                tlgClient.channels.put(supergroup.id, new TlgChannel(supergroup.id));
+                                tlgChannel = new TlgChannel(supergroup.id);
+                                tlgChannel.setUsername(supergroup.username);
+                                tlgClient.channels.put(supergroup.id, tlgChannel);
                             }
 
                         }
@@ -132,11 +141,19 @@ public class UpdatesHandler implements Client.ResultHandler {
                     }
                 }
                 break;
+            case TdApi.UpdateNewMessage.CONSTRUCTOR:
+                try {
+                    if (dispatcher.isEnabled()) {
+                        dispatcher.dispatch(((TdApi.UpdateNewMessage) object).message, tlgClient.client);
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Error while executing dispatch: " + object.toString(), e);
+                }
+                break;
         }
     }
 
     private void onAuthStateUpdated(TdApi.AuthorizationState authorizationState) {
-        LOGGER.info("AuthState: {}", authorizationState.getClass().getSimpleName());
         switch (authorizationState.getConstructor()) {
             case TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR:
                 TdApi.TdlibParameters parameters = new TdApi.TdlibParameters();
@@ -192,6 +209,7 @@ public class UpdatesHandler implements Client.ResultHandler {
                 break;
             case TdApi.AuthorizationStateClosed.CONSTRUCTOR:
                 LOGGER.debug("Client {} successful closed", tlgClient.phone);
+                logoutLatch.countDown();
                 break;
             default:
                 LOGGER.error("Unsupported authorization state: {}", authorizationState);

@@ -1,0 +1,12 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="kryptoSuite" verbose="1">
+    <test name="test">
+        <packages>
+            <package name="ru.airiva.*"/>
+        </packages>
+    </test>
+    <listeners>
+        <listener class-name="ru.airiva.TestLogListener"/>
+    </listeners>
+</suite>

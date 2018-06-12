@@ -4,18 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 import ru.airiva.client.TlgClient;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
+import ru.airiva.parser.Courier;
+import ru.airiva.parser.Expression;
 import ru.airiva.service.da.TlgInteractionDaService;
 import ru.airiva.tdlib.TdApi;
 import ru.airiva.vo.TlgChannel;
 import ru.airiva.vo.TlgChat;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.Lock;
@@ -42,53 +43,73 @@ public class TlgInteractionFgService {
         this.tlgInteractionDaService = tlgInteractionDaService;
     }
 
+
+    /**
+     * Проверка авторизации клиента
+     *
+     * @param phone номер телефона клиента
+     * @return клиент, если он уже авторизован
+     * @throws TlgNeedAuthBsException     если клиент не авторизован
+     * @throws InterruptedException       если поток был прерван
+     * @throws TlgWaitAuthCodeBsException если авторизация клиента на шаге подтверждения кода аутентификации
+     */
+    private TlgClient checkAuth(final String phone) throws TlgNeedAuthBsException, InterruptedException, TlgWaitAuthCodeBsException {
+        TlgClient tlgClient = CLIENTS.get(phone);
+        if (tlgClient == null) throw new TlgNeedAuthBsException();
+        //Запрашиваем статус авторизации клиента
+        int authorizationState = tlgInteractionDaService.getAuthorizationState(tlgClient).getConstructor();
+        switch (authorizationState) {
+            case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
+                //Если клиент ждет код
+                //TODO добавить повторную отправку кода
+                throw new TlgWaitAuthCodeBsException();
+            case TdApi.AuthorizationStateReady.CONSTRUCTOR:
+                //Если клиент авторизован
+                return tlgClient;
+            default:
+                //Если другие статусы, то авторизации нет
+                CLIENTS.remove(phone);
+                throw new TlgNeedAuthBsException();
+        }
+    }
+
     /**
      * Авторизация клиента
      *
      * @param phone номер телефона клиента в формате +7ХХХХХХХХХ
-     * @return авторизованный клиент
+     * @throws TlgWaitAuthCodeBsException если авторизация клиента на шаге подтверждения кода аутентификации
+     * @throws InterruptedException       если поток был прерван
+     * @throws TlgFailAuthBsException     если во время авторизации сервер вернул ошибку
      */
-    public TlgClient auth(final String phone) throws TlgWaitAuthCodeBsException, InterruptedException, TlgFailAuthBsException {
+    public void auth(final String phone) throws TlgWaitAuthCodeBsException, InterruptedException, TlgFailAuthBsException {
+
 
         Lock lockByPhone = getLockByPhone(phone);
-
         lockByPhone.lock();
-        final TlgClient tlgClient;
         try {
-            if (CLIENTS.containsKey(phone)) {
-                TlgClient checkTlgClient = CLIENTS.get(phone);
-                //Запрашиваем статус авторизации клиента
-                switch (tlgInteractionDaService.getAuthorizationState(checkTlgClient).getConstructor()) {
+            try {
+                //Проверяем текущий статус авторизации у клиента
+                checkAuth(phone);
+            } catch (TlgNeedAuthBsException e) {
+                //Авторизовываем заново
+                TlgClient tlgClient = new TlgClient(phone);
+                TdApi.Object authStep = tlgClient.updatesHandler.authExchanger.exchange(null);
+                switch (authStep.getConstructor()) {
                     case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
-                        //Если клиент ждет код
+                        CLIENTS.put(phone, tlgClient);
                         throw new TlgWaitAuthCodeBsException();
                     case TdApi.AuthorizationStateReady.CONSTRUCTOR:
-                        //Если клиент авторизован
-                        return checkTlgClient;
-                    default:
-                        //Если другие статусы, то авторизовываем заново
-                        CLIENTS.remove(phone);
+                        CLIENTS.put(phone, tlgClient);
+                        initializeCouriers(tlgClient);
                         break;
+                    case TdApi.Error.CONSTRUCTOR:
+                        tlgInteractionDaService.closeClient(tlgClient);
+                        throw new TlgFailAuthBsException(((TdApi.Error) authStep).message);
                 }
-            }
-            tlgClient = new TlgClient(phone);
-            TdApi.Object authStep = tlgClient.updatesHandler.authExchanger.exchange(null);
-            switch (authStep.getConstructor()) {
-                case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
-                    CLIENTS.put(phone, tlgClient);
-                    throw new TlgWaitAuthCodeBsException();
-                case TdApi.AuthorizationStateReady.CONSTRUCTOR:
-                    CLIENTS.put(phone, tlgClient);
-                    break;
-                case TdApi.Error.CONSTRUCTOR:
-                    tlgInteractionDaService.closeClient(tlgClient);
-                    throw new TlgFailAuthBsException(((TdApi.Error) authStep).message);
             }
         } finally {
             lockByPhone.unlock();
         }
-
-        return tlgClient;
     }
 
     /**
@@ -103,43 +124,38 @@ public class TlgInteractionFgService {
         Lock lockByPhone = getLockByPhone(phone);
 
         lockByPhone.lock();
-        TlgClient tlgClient = CLIENTS.get(phone);
-        if (tlgClient == null) throw new TlgNeedAuthBsException();
         try {
-            TdApi.AuthorizationState authorizationState = tlgInteractionDaService.getAuthorizationState(tlgClient);
-            switch (authorizationState.getConstructor()) {
-                case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR:
-                    tlgClient.updatesHandler.setFromWaitCodeState(true);
+            checkAuth(phone);
+            //Если клиент уже авторизовался
+            result = true;
+        } catch (TlgWaitAuthCodeBsException e) {
+            //Если клиент ждёт код аутентификации
+            TlgClient tlgClient = CLIENTS.get(phone);
+            try {
+                tlgClient.updatesHandler.setFromWaitCodeState(true);
+                tlgClient.client.send(
+                        new TdApi.CheckAuthenticationCode(code, "", ""),
+                        tlgClient.checkAuthenticationCodeHandler);
 
-                    tlgClient.client.send(
-                            new TdApi.CheckAuthenticationCode(code, "", ""),
-                            tlgClient.checkAuthenticationCodeHandler);
-
-                    TdApi.Object state = tlgClient.updatesHandler.checkCodeExchanger.exchange(null);
-
-                    switch (state.getConstructor()) {
-                        case TdApi.AuthorizationStateReady.CONSTRUCTOR:
-                            result = true;
-                            break;
-                        case TdApi.Error.CONSTRUCTOR:
-                            result = false;
-                            break;
-                        default:
-                            result = false;
-                            break;
-                    }
-                    break;
-                case TdApi.AuthorizationStateReady.CONSTRUCTOR:
-                    result = true;
-                    break;
-                default:
-                    throw new TlgNeedAuthBsException();
+                TdApi.Object state = tlgClient.updatesHandler.checkCodeExchanger.exchange(null);
+                switch (state.getConstructor()) {
+                    case TdApi.AuthorizationStateReady.CONSTRUCTOR:
+                        result = true;
+                        break;
+                    case TdApi.Error.CONSTRUCTOR:
+                        result = false;
+                        break;
+                    default:
+                        result = false;
+                        break;
+                }
+            } finally {
+                tlgClient.updatesHandler.setFromWaitCodeState(false);
             }
+
         } finally {
-            tlgClient.updatesHandler.setFromWaitCodeState(false);
             lockByPhone.unlock();
         }
-
         return result;
     }
 
@@ -165,6 +181,12 @@ public class TlgInteractionFgService {
                             break;
                     }
                 });
+                try {
+                    tlgClient.updatesHandler.logoutLatch.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    LOGGER.error("Logout was interrupted", e);
+                }
                 CLIENTS.remove(phone);
             }
         } finally {
@@ -178,19 +200,210 @@ public class TlgInteractionFgService {
      * @param phone телефон клиента
      * @return набор идентификаторов чатов
      */
-    public Collection<TlgChannel> getChannels(final String phone) {
-        TlgClient tlgClient = CLIENTS.get(phone);
-        if (!tlgClient.updatesHandler.chatsInitialized) {
-            initializeChats(tlgClient);
+    public Collection<TlgChannel> getChannels(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+
+        lockByPhone.lock();
+        Collection<TlgChannel> channels;
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            if (!tlgClient.updatesHandler.chatsInitialized) {
+                initializeChats(tlgClient);
+            }
+            channels = tlgClient.channels.values();
+            //Перекладываем названия и id чатов в каналы
+            channels.forEach(tlgChannel -> {
+                String title = tlgClient.updatesHandler.supergroupId2Title.get(tlgChannel.id);
+                tlgChannel.setTitle(title != null && !title.isEmpty() ? title : "unknown");
+                tlgChannel.setChatId(tlgClient.updatesHandler.supergroupId2ChatId.get(tlgChannel.id));
+            });
+        } finally {
+            lockByPhone.unlock();
         }
-        Collection<TlgChannel> channels = tlgClient.channels.values();
-        //Перекладываем названия и id чатов в каналы
-        channels.forEach(tlgChannel -> {
-            String title = tlgClient.updatesHandler.supergroupId2Title.get(tlgChannel.id);
-            tlgChannel.setTitle(title != null && !title.isEmpty() ? title : "unknown");
-            tlgChannel.setChatId(tlgClient.updatesHandler.supergroupId2ChatId.get(tlgChannel.id));
-        });
+
         return channels;
+    }
+
+    /**
+     * Активация парсинга клиента
+     *
+     * @param phone телефон клиента
+     */
+    public void enableParsing(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            tlgClient.updatesHandler.dispatcher.enable();
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Остановка парсинга клиента
+     *
+     * @param phone телефон клиента
+     */
+    public void disableParsing(final String phone) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            tlgClient.updatesHandler.dispatcher.disable();
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Добавление курьера в диспетчер
+     *
+     * @param phone   номер телефона клиента
+     * @param courier курьер
+     */
+    public void addCourier(final String phone, final Courier courier) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        if (courier == null) return;
+        Assert.notNull(courier.parser, "У курьера должен быть шаблон");
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            tlgClient.updatesHandler.dispatcher.putCourier(courier);
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Добавление нескольких курьеров в диспетчер
+     *
+     * @param phone    номер телефона клиента
+     * @param couriers набор курьеров
+     */
+    public void addCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            couriers.forEach(tlgClient.updatesHandler.dispatcher::putCourier);
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Удаление курьера из диспетчера
+     *
+     * @param phone телефон клиента
+     * @param template шаблон, по которому нужно удалить курьера
+     */
+    public void deleteCourier(final String phone, final Courier template) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            tlgClient.updatesHandler.dispatcher.deleteCourier(template);
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Удаление набора курьеров из диспетчера
+     *
+     * @param phone телефон клиента
+     * @param couriers коллекция шаблонов курьеров для удаления
+     */
+    public void deleteCouriers(final String phone, final Collection<Courier> couriers) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            couriers.forEach(tlgClient.updatesHandler.dispatcher::deleteCourier);
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Изменение времени задержки отправки сообщения курьером текущего клиента
+     *
+     * @param phone номер телефона клиента
+     * @param delay задержка отправки сообщения
+     */
+    public void setCourierDelay(final String phone, final Courier template, final long delay) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            Courier courier = tlgClient.updatesHandler.dispatcher.findCourier(template);
+            if (courier != null) {
+                courier.setDelay(delay);
+            }
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Добавление шаблона для парсинга курьеру клиента
+     *
+     * @param phone номер телефона клиента
+     * @param template шаблон курьера для поиска курьера
+     * @param expression шаблон для добавления в курьер
+     */
+    public void addExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            Courier courier = tlgClient.updatesHandler.dispatcher.findCourier(template);
+            if (courier != null && courier.parser != null) {
+                courier.parser.addExpression(expression);
+            }
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Удаление шаблона для парсинга из курьера клиента
+     *
+     * @param phone нормер телефона клиента
+     * @param template шаблон курьера для поиска курьера
+     * @param expression шаблон для удаления из курьера
+     */
+    public void removeExpression(final String phone, final Courier template, final Expression expression) throws InterruptedException, TlgWaitAuthCodeBsException, TlgNeedAuthBsException {
+        Lock lockByPhone = getLockByPhone(phone);
+        lockByPhone.lock();
+        try {
+            TlgClient tlgClient = checkAuth(phone);
+            Courier courier = tlgClient.updatesHandler.dispatcher.findCourier(template);
+            if (courier != null && courier.parser != null) {
+                courier.parser.removeExpression(expression);
+            }
+        } finally {
+            lockByPhone.unlock();
+        }
+    }
+
+    /**
+     * Добавление курьеров в диспетчер из БД
+     *
+     * @param tlgClient текущий клиент
+     */
+    private void initializeCouriers(TlgClient tlgClient) {
+        if (tlgClient == null) return;
+        List<Courier> couriers = new ArrayList<>(); //TODO формировать из БД
+        try {
+            addCouriers(tlgClient.phone, couriers);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Couriers initialization was interrupted", e);
+        } catch (Exception e) {
+            LOGGER.warn("Couriers initialization exception", e);
+        }
     }
 
     /**
@@ -260,7 +473,7 @@ public class TlgInteractionFgService {
      * Извлечение блокировки по номеру телефона
      * Если блокировки еще нет, то создает новую
      *
-     * @param phone номер телефона
+     * @param phone телефон клиента
      * @return блокировка
      */
     private Lock getLockByPhone(String phone) {

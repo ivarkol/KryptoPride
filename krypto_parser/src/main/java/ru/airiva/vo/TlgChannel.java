@@ -10,6 +10,7 @@ public class TlgChannel implements Comparable<TlgChannel> {
     public final int id;
     private String title;
     private long chatId;
+    private String username;
 
     public void setTitle(String title) {
         this.title = title != null ? title : "unknown";
@@ -25,6 +26,14 @@ public class TlgChannel implements Comparable<TlgChannel> {
 
     public void setChatId(long chatId) {
         this.chatId = chatId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public TlgChannel(int id) {

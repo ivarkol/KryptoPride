@@ -3,3 +3,9 @@ version '0.0.1-SNAPSHOT'
 dependencies {
     compile project(":krypto_service")
 }
+
+test {
+    useTestNG() {
+        suites 'src/test/resources/testng.xml'
+    }
+}
