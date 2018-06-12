@@ -16,6 +16,7 @@ import java.util.List;
 @RequestMapping("/tlg")
 public class TestController {
 
+    private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
     private TlgInteractionCgService tlgInteractionCgService;
 
     @Autowired
@@ -23,7 +24,7 @@ public class TestController {
         this.tlgInteractionCgService = tlgInteractionCgService;
     }
 
-    @GetMapping(value = "/start", params = "phone", produces = "text/html;charset=UTF-8")
+    @GetMapping(value = "/start", params = "phone", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> start(@RequestParam("phone") String phone) {
         String rs;
         try {
@@ -35,7 +36,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/stop", params = "phone", produces = "text/html;charset=UTF-8")
+    @GetMapping(value = "/stop", params = "phone", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> stop(@RequestParam("phone") String phone) {
         String rs;
         try {
@@ -47,7 +48,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/auth", params = "phone", produces = "text/html;charset=UTF-8")
+    @GetMapping(value = "/auth", params = "phone", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> auth(@RequestParam("phone") String phone) {
         String rs;
         try {
@@ -59,7 +60,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/code", params = {"phone", "code"}, produces = "text/html;charset=UTF-8")
+    @GetMapping(value = "/code", params = {"phone", "code"}, produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> checkCode(@RequestParam("phone") String phone,
                                      @RequestParam("code") String code) {
         String rs;
@@ -76,7 +77,20 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/logout", params = {"phone"}, produces = "text/html;charset=UTF-8")
+    @GetMapping(value = "/sendcode", produces = TEXT_HTML_CHARSET_UTF_8)
+    ResponseEntity<String> sendCode(@RequestParam("phone") String phone) {
+        String rs;
+
+        try {
+            String codeType = tlgInteractionCgService.resendCode(phone);
+            rs = "Code was sent by: " + codeType;
+        } catch (Exception e) {
+            rs = e.getMessage();
+        }
+        return ResponseEntity.ok(rs);
+    }
+
+    @GetMapping(value = "/logout", params = {"phone"}, produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> logout(@RequestParam("phone") String phone) {
         tlgInteractionCgService.logout(phone);
         return ResponseEntity.ok("Logout is successful");
@@ -172,7 +186,7 @@ public class TestController {
     }
 
 
-    @GetMapping(value = "/test", produces = "text/html;charset=UTF-8")
+    @GetMapping(value = "/test", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> test() {
         return ResponseEntity.ok("ТЕСТ");
     }

@@ -4,8 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.airiva.client.TlgClient;
 import ru.airiva.parser.Dispatcher;
+import ru.airiva.properties.Timeouts;
 import ru.airiva.tdlib.Client;
 import ru.airiva.tdlib.TdApi;
+import ru.airiva.utils.SpringContext;
 import ru.airiva.vo.TlgChannel;
 import ru.airiva.vo.TlgChat;
 
@@ -13,14 +15,17 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
+import java.util.concurrent.TimeoutException;
 
 import static java.lang.System.getProperty;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class UpdatesHandler implements Client.ResultHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdatesHandler.class);
 
     private final TlgClient tlgClient;
+    private final Timeouts timeouts;
     private final AuthorizationRequestHandler authorizationRequestHandler;
 
     public final Dispatcher dispatcher;
@@ -45,6 +50,7 @@ public class UpdatesHandler implements Client.ResultHandler {
         this.tlgClient = tlgClient;
         this.authorizationRequestHandler = new AuthorizationRequestHandler();
         this.dispatcher = new Dispatcher();
+        this.timeouts = SpringContext.getContext().getBean(Timeouts.class);
     }
 
     private void setChatOrder(TlgChat tlgChat, long order) {
@@ -178,26 +184,33 @@ public class UpdatesHandler implements Client.ResultHandler {
             }
             case TdApi.AuthorizationStateWaitCode.CONSTRUCTOR: {
                 try {
-                    authExchanger.exchange(authorizationState);
+                    authExchanger.exchange(authorizationState, timeouts.auth, SECONDS);
                 } catch (InterruptedException e) {
                     LOGGER.info("AuthExchanger was interrupted from code waiting step", e);
+                    Thread.currentThread().interrupt();
+                } catch (TimeoutException e) {
+                    LOGGER.warn("Authorization waiting timeout elapsed", e);
                 }
                 break;
             }
             case TdApi.AuthorizationStateReady.CONSTRUCTOR:
                 if (fromWaitCodeState) {
                     try {
-                        checkCodeExchanger.exchange(authorizationState);
+                        checkCodeExchanger.exchange(authorizationState, timeouts.codeCheck, SECONDS);
                     } catch (InterruptedException e) {
                         LOGGER.info("CheckCodeExchanger was interrupted from state ready step", e);
                         Thread.currentThread().interrupt();
+                    } catch (TimeoutException e) {
+                        LOGGER.warn("Authentication code check waiting timeout elapsed", e);
                     }
                 } else {
                     try {
-                        authExchanger.exchange(authorizationState);
+                        authExchanger.exchange(authorizationState, timeouts.auth, SECONDS);
                     } catch (InterruptedException e) {
                         LOGGER.info("AuthExchanger was interrupted from state ready step", e);
                         Thread.currentThread().interrupt();
+                    } catch (TimeoutException e) {
+                        LOGGER.warn("Authorization waiting timeout elapsed", e);
                     }
                 }
                 break;
@@ -227,10 +240,12 @@ public class UpdatesHandler implements Client.ResultHandler {
                 case TdApi.Error.CONSTRUCTOR:
                     logger.error("Receive an error: {}", object);
                     try {
-                        authExchanger.exchange(object);
+                        authExchanger.exchange(object, timeouts.auth, SECONDS);
                     } catch (InterruptedException e) {
                         LOGGER.error("AuthExchanger was interrupted from Error case", e);
                         Thread.currentThread().interrupt();
+                    } catch (TimeoutException e) {
+                        LOGGER.warn("Authorization waiting timeout elapsed", e);
                     }
                     break;
                 case TdApi.Ok.CONSTRUCTOR:
