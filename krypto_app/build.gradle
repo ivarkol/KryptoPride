@@ -29,6 +29,7 @@ dependencies {
     compile 'org.springframework:spring-webmvc:5.0.6.RELEASE'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.9.2'
     compile 'javax.servlet:javax.servlet-api:4.0.0'
+    compile 'org.codehaus.groovy:groovy-all:2.4.14'
 
     cargo "org.codehaus.cargo:cargo-core-uberjar:1.6.7", "org.codehaus.cargo:cargo-ant:1.6.7"
 }
