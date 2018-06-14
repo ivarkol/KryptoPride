@@ -39,7 +39,7 @@ public class TlgClient {
         updatesHandler = new UpdatesHandler(this);
         authorizationCheckHandler = new AuthorizationCheckHandler();
         checkAuthenticationCodeHandler = new CheckAuthenticationCodeHandler(this);
-        client = Client.create(updatesHandler, null, null);
+        client = Client.create(this.phone, updatesHandler, null, null);
     }
 
     @Override

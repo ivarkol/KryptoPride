@@ -150,14 +150,15 @@ public final class Client implements Runnable {
     /**
      * Creates new Client.
      *
+     * @param phone                   Clients phone number
      * @param updatesHandler          Handler for incoming updates.
      * @param updatesExceptionHandler Handler for exceptions thrown from updatesHandler. If it is null, exceptions will be iggnored.
      * @param defaultExceptionHandler Default handler for exceptions thrown from all ResultHandler. If it is null, exceptions will be iggnored.
      * @return created Client
      */
-    public static Client create(ResultHandler updatesHandler, ExceptionHandler updatesExceptionHandler, ExceptionHandler defaultExceptionHandler) {
+    public static Client create(String phone, ResultHandler updatesHandler, ExceptionHandler updatesExceptionHandler, ExceptionHandler defaultExceptionHandler) {
         Client client = new Client(updatesHandler, updatesExceptionHandler, defaultExceptionHandler);
-        new Thread(client, "TDLib_thread-" + clientCount.addAndGet(1L)).start();
+        new Thread(client, String.format("TDLib_thread-%s-%d", phone.substring(1), clientCount.addAndGet(1L))).start();
         return client;
     }
 

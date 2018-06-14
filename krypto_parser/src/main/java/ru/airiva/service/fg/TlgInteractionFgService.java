@@ -107,6 +107,7 @@ public class TlgInteractionFgService {
                 try {
                     authStep = tlgClient.updatesHandler.authExchanger.exchange(null, timeouts.auth, SECONDS);
                 } catch (TimeoutException te) {
+                    Thread.currentThread().interrupt();
                     throw new TlgTimeoutBsException("Истекло время ожидания авторизации", te);
                 }
                 switch (authStep.getConstructor()) {
