@@ -9,6 +9,6 @@ import org.springframework.context.annotation.Import;
  */
 @Configuration
 @ComponentScan(value = {"ru.airiva.utils", "ru.airiva.properties"})
-@Import({ServicePersistConfig.class})
+//@Import({ServicePersistConfig.class})
 public class ServiceAppConfig {
 }

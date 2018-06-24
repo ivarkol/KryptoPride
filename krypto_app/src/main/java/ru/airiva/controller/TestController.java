@@ -108,7 +108,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/incparse")
+    @GetMapping(value = "/incparse", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> includeParsing(@RequestParam("phone") String phone,
                                           @RequestParam("source") long source,
                                           @RequestParam("target") long target,
@@ -123,7 +123,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/exparse")
+    @GetMapping(value = "/exparse", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> excludeParsing(@RequestParam("phone") String phone,
                                           @RequestParam("source") long source,
                                           @RequestParam("target") long target) {
@@ -137,7 +137,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/addexpr")
+    @GetMapping(value = "/addexpr", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> addExpression(@RequestParam("phone") String phone,
                                          @RequestParam("source") long source,
                                          @RequestParam("target") long target,
@@ -154,7 +154,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/delexpr")
+    @GetMapping(value = "/delexpr", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> removeExpression(@RequestParam("phone") String phone,
                                             @RequestParam("source") long source,
                                             @RequestParam("target") long target,
@@ -170,7 +170,7 @@ public class TestController {
         return ResponseEntity.ok(rs);
     }
 
-    @GetMapping(value = "/delay")
+    @GetMapping(value = "/delay", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> changeDelay(@RequestParam("phone") String phone,
                                             @RequestParam("source") long source,
                                             @RequestParam("target") long target,
