@@ -2,22 +2,20 @@ package ru.airiva.entities;
 
 import javax.persistence.*;
 
+import java.util.Objects;
+
 import static ru.airiva.entities.EntityConstants.*;
 
 /**
  * @author Ivan
  */
 @Entity
-@Table(name = TLG_CHAT)
-@SequenceGenerator(name = TLG_CHAT_GEN, sequenceName = TLG_CHAT_SEQ, allocationSize = 1)
+@Table(name = TLG_CHATS)
 public class TlgChatEntity {
 
     @Id
-    @GeneratedValue(generator = TLG_CHAT_GEN, strategy = GenerationType.SEQUENCE)
-    private Long id;
-
-    @Column(name = "chat_id")
-    private long chatId;
+    @Column(name = "tlg_chat_id")
+    private Long tlgChatId;
 
     @Column(name = "title")
     private String title;
@@ -28,20 +26,12 @@ public class TlgChatEntity {
     @Column(name = "is_channel")
     private boolean channel = false;
 
-    public Long getId() {
-        return id;
+    public Long getTlgChatId() {
+        return tlgChatId;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public long getChatId() {
-        return chatId;
-    }
-
-    public void setChatId(long chatId) {
-        this.chatId = chatId;
+    public void setTlgChatId(Long tlgChatId) {
+        this.tlgChatId = tlgChatId;
     }
 
     public String getTitle() {
@@ -66,5 +56,19 @@ public class TlgChatEntity {
 
     public void setChannel(boolean channel) {
         this.channel = channel;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TlgChatEntity that = (TlgChatEntity) o;
+        return Objects.equals(tlgChatId, that.tlgChatId);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(tlgChatId);
     }
 }

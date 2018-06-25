@@ -2,6 +2,8 @@ package ru.airiva.entities;
 
 import javax.persistence.*;
 
+import java.util.Objects;
+
 import static ru.airiva.entities.EntityConstants.*;
 
 /**
@@ -16,7 +18,7 @@ public class ExpressionEntity {
     @GeneratedValue(generator = EXPRESSION_GEN, strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @Column(name = "searchement")
+    @Column(name = "searchement", nullable = false)
     private String searchement;
 
     @Column(name = "replacement")
@@ -24,6 +26,10 @@ public class ExpressionEntity {
 
     @Column(name = "order")
     private int order = 0;
+
+    @ManyToOne
+    @JoinColumn(name = "person_id")
+    private PersonEntity personEntity;
 
     public Long getId() {
         return id;
@@ -55,5 +61,29 @@ public class ExpressionEntity {
 
     public void setOrder(int order) {
         this.order = order;
+    }
+
+    public PersonEntity getPersonEntity() {
+        return personEntity;
+    }
+
+    public void setPersonEntity(PersonEntity personEntity) {
+        this.personEntity = personEntity;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExpressionEntity that = (ExpressionEntity) o;
+        return Objects.equals(searchement, that.searchement) &&
+                Objects.equals(replacement, that.replacement) &&
+                Objects.equals(personEntity, that.personEntity);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(searchement, replacement, personEntity);
     }
 }
