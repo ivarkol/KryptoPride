@@ -2,15 +2,14 @@ package ru.airiva.parser;
 
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import ru.airiva.entities.OrderedExpressionEntity;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.regex.Pattern.quote;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
@@ -21,19 +20,13 @@ public class Parser {
     private final Map<String, Expression> expressions = new CaseInsensitiveMap<>();
     private Pattern pattern;
 
-    private Parser() {
-    }
-
     /**
-     * Создание парсера по данным из БД
-     *
-     * @param phone  телефон текущего клиента
-     * @param source идентификатор канала источника
-     * @return парсер
+     * @param orderedExpressionEntities набор упорядоченных шаблонов
      */
-    public static Parser create(final String phone, final long source) {
-        //TODO формировать из БД
-        return new Parser();
+    public Parser(final Set<OrderedExpressionEntity> orderedExpressionEntities) {
+        if (isNotEmpty(orderedExpressionEntities)) {
+            orderedExpressionEntities.forEach(exp -> expressions.put(exp.getSearchement(), new Expression(exp.getSearchement(), exp.getReplacement(), exp.getOrder())));
+        }
     }
 
     public synchronized String parse(String message) {

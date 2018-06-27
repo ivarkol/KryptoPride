@@ -1,7 +1,6 @@
 package ru.airiva.entities;
 
 import javax.persistence.*;
-
 import java.util.Objects;
 
 import static ru.airiva.entities.EntityConstants.*;
@@ -23,9 +22,6 @@ public class ExpressionEntity {
 
     @Column(name = "replacement")
     private String replacement;
-
-    @Column(name = "order")
-    private int order = 0;
 
     @ManyToOne
     @JoinColumn(name = "person_id")
@@ -53,14 +49,6 @@ public class ExpressionEntity {
 
     public void setReplacement(String replacement) {
         this.replacement = replacement;
-    }
-
-    public int getOrder() {
-        return order;
-    }
-
-    public void setOrder(int order) {
-        this.order = order;
     }
 
     public PersonEntity getPersonEntity() {

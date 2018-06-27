@@ -6,13 +6,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 import ru.airiva.client.TlgClient;
+import ru.airiva.entities.TlgChatPairEntity;
 import ru.airiva.exception.TlgFailAuthBsException;
 import ru.airiva.exception.TlgNeedAuthBsException;
 import ru.airiva.exception.TlgTimeoutBsException;
 import ru.airiva.exception.TlgWaitAuthCodeBsException;
 import ru.airiva.parser.Courier;
 import ru.airiva.parser.Expression;
+import ru.airiva.parser.Parser;
 import ru.airiva.properties.Timeouts;
+import ru.airiva.service.cg.KryptoParserCgService;
 import ru.airiva.service.da.TlgInteractionDaService;
 import ru.airiva.tdlib.TdApi;
 import ru.airiva.vo.TlgChannel;
@@ -42,11 +45,17 @@ public class TlgInteractionFgService {
     private static final Map<String, TlgClient> CLIENTS = new HashMap<>();
 
     private TlgInteractionDaService tlgInteractionDaService;
+    private KryptoParserCgService kryptoParserCgService;
     private Timeouts timeouts;
 
     @Autowired
     public void setTlgInteractionDaService(TlgInteractionDaService tlgInteractionDaService) {
         this.tlgInteractionDaService = tlgInteractionDaService;
+    }
+
+    @Autowired
+    public void setKryptoParserCgService(KryptoParserCgService kryptoParserCgService) {
+        this.kryptoParserCgService = kryptoParserCgService;
     }
 
     @Autowired
@@ -467,7 +476,14 @@ public class TlgInteractionFgService {
      */
     private void initializeCouriers(TlgClient tlgClient) {
         if (tlgClient == null) return;
-        List<Courier> couriers = new ArrayList<>(); //TODO формировать из БД
+        List<Courier> couriers = new ArrayList<>();
+        Set<TlgChatPairEntity> pairs = kryptoParserCgService.obtainTlgChatPairs(tlgClient.phone);
+        pairs.forEach(pair -> couriers.add(
+                new Courier(
+                        pair.getSrcChat().getTlgChatId(),
+                        pair.getDestChat().getTlgChatId(),
+                        new Parser(pair.getOrderedExpressionEntities()),
+                        pair.getDelay())));
         try {
             addCouriers(tlgClient.phone, couriers);
         } catch (InterruptedException e) {

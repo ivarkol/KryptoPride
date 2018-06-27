@@ -111,11 +111,10 @@ public class TestController {
     @GetMapping(value = "/incparse", produces = TEXT_HTML_CHARSET_UTF_8)
     ResponseEntity<String> includeParsing(@RequestParam("phone") String phone,
                                           @RequestParam("source") long source,
-                                          @RequestParam("target") long target,
-                                          @RequestParam("delay") long delay) {
+                                          @RequestParam("target") long target) {
         String rs;
         try {
-            tlgInteractionCgService.includeParsing(phone, source, target, delay);
+            tlgInteractionCgService.includeParsing(phone, source, target);
             rs = "Parsing included successfully";
         } catch (Exception e) {
             rs = e.getMessage();

@@ -1,7 +1,6 @@
 package ru.airiva.entities;
 
 import javax.persistence.*;
-
 import java.util.Objects;
 import java.util.Set;
 
@@ -27,9 +26,16 @@ public class TlgChatPairEntity {
     @JoinColumn(name = "dest_chat_id")
     private TlgChatEntity destChat;
 
-    @OneToMany
-    @JoinColumn(name = "expression_id")
-    private Set<ExpressionEntity> expressionEntities;
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ordered_expression_id")
+    private Set<OrderedExpressionEntity> orderedExpressionEntities;
+
+    @Column(name = "delay")
+    private long delay = 0;
+
+    @ManyToOne
+    @JoinColumn(name = "tr_package_id")
+    private TlgTrPackageEntity tlgTrPackageEntity;
 
     public Long getId() {
         return id;
@@ -55,12 +61,28 @@ public class TlgChatPairEntity {
         this.destChat = destChat;
     }
 
-    public Set<ExpressionEntity> getExpressionEntities() {
-        return expressionEntities;
+    public Set<OrderedExpressionEntity> getOrderedExpressionEntities() {
+        return orderedExpressionEntities;
     }
 
-    public void setExpressionEntities(Set<ExpressionEntity> expressionEntities) {
-        this.expressionEntities = expressionEntities;
+    public void setOrderedExpressionEntities(Set<OrderedExpressionEntity> orderedExpressionEntities) {
+        this.orderedExpressionEntities = orderedExpressionEntities;
+    }
+
+    public long getDelay() {
+        return delay;
+    }
+
+    public void setDelay(long delay) {
+        this.delay = delay;
+    }
+
+    public TlgTrPackageEntity getTlgTrPackageEntity() {
+        return tlgTrPackageEntity;
+    }
+
+    public void setTlgTrPackageEntity(TlgTrPackageEntity tlgTrPackageEntity) {
+        this.tlgTrPackageEntity = tlgTrPackageEntity;
     }
 
     @Override
@@ -69,13 +91,11 @@ public class TlgChatPairEntity {
         if (o == null || getClass() != o.getClass()) return false;
         TlgChatPairEntity that = (TlgChatPairEntity) o;
         return Objects.equals(srcChat, that.srcChat) &&
-                Objects.equals(destChat, that.destChat) &&
-                Objects.equals(expressionEntities, that.expressionEntities);
+                Objects.equals(destChat, that.destChat);
     }
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(srcChat, destChat, expressionEntities);
+        return Objects.hash(srcChat, destChat);
     }
 }

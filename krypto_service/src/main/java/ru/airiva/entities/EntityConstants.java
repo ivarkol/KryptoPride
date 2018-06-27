@@ -14,16 +14,12 @@ class EntityConstants {
     static final String EXPRESSION_SEQ = "expression_seq";
 
     static final String TLG_CLIENTS = "tlg_clients";
-    static final String TLG_CLIENTS_GEN = "tlg_clients_gen";
-    static final String TLG_CLIENTS_SEQ = "tlg_clients_seq";
 
     static final String CHAT_PAIRS = "tlg_chat_pairs";
     static final String CHAT_PAIRS_GEN = "tlg_chat_pairs_gen";
     static final String CHAT_PAIRS_SEQ = "tlg_chat_pairs_seq";
 
     static final String TLG_CHATS = "tlg_chats";
-    static final String TLG_CHATS_GEN = "tlg_chats_gen";
-    static final String TLG_CHATS_SEQ = "tlg_chats_seq";
 
     static final String TLG_BOT_TRANSLATIONS = "tlg_bot_translations";
     static final String TLG_BOT_TRANSLATIONS_GEN = "tlg_bot_translations_gen";
@@ -36,11 +32,18 @@ class EntityConstants {
     static final String TLG_ADS = "tlg_ads";
     static final String TLG_ADS_GEN = "tlg_ads_gen";
     static final String TLG_ADS_SEQ = "tlg_ads_seq";
+
     static final String TLG_TR_PACKAGES = "tlg_tr_packages";
     static final String TLG_TR_PACKAGES_GEN = "tlg_tr_packages_gen";
     static final String TLG_TR_PACKAGES_SEQ = "tlg_tr_packages_seq";
+
     static final String TLG_USERS = "tlg_users";
+
     static final String TLG_BOTS = "tlg_bots";
     static final String TLG_BOTS_GEN = "tlg_bots_gen";
     static final String TLG_BOTS_SEQ = "tlg_bots_seq";
+
+    static final String ORDERED_EXPRESSIONS = "ordered_expressions";
+    static final String ORDERED_EXPRESSIONS_GEN = "ordered_expressions_gen";
+    static final String ORDERED_EXPRESSIONS_SEQ = "ordered_expressions_seq";
 }
