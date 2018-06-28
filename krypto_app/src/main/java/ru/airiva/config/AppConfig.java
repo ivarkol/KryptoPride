@@ -10,4 +10,5 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @Import({ParserAppConfig.class, ServiceAppConfig.class})
 @EnableWebMvc
 public class AppConfig {
+
 }
