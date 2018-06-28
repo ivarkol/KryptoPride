@@ -4,7 +4,6 @@ import org.apache.commons.collections4.MapUtils;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.lang.reflect.Constructor;
 import java.util.Map;
 
 import static org.apache.commons.lang3.reflect.FieldUtils.getField;
@@ -20,9 +19,7 @@ public class ParserTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        Constructor<Parser> constructor = Parser.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        parser = constructor.newInstance();
+        parser = new Parser(null);
     }
 
     @Test

@@ -98,7 +98,9 @@ public class TlgInteractionCgService implements TlgInteraction {
             throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
         TlgChatPairEntity pair = kryptoParserCgService.obtainTlgChatPair(phone, source, target);
         try {
-            tlgInteractionFgService.addCourier(phone, new Courier(source, target, new Parser(pair.getOrderedExpressionEntities()), pair.getDelay()));
+            if (pair != null) {
+                tlgInteractionFgService.addCourier(phone, new Courier(source, target, new Parser(pair.getOrderedExpressionEntities()), pair.getDelay()));
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TlgDefaultBsException(e);
