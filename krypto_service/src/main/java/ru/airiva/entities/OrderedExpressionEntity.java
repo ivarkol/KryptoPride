@@ -17,7 +17,7 @@ public class OrderedExpressionEntity {
     @GeneratedValue(generator = ORDERED_EXPRESSIONS_GEN, strategy = GenerationType.SEQUENCE)
     private Long id;
 
-    @Column(name = "order")
+    @Column(name = "order_value")
     private int order = 0;
 
     @ManyToOne

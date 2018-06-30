@@ -27,7 +27,7 @@ public class TlgChatPairEntity {
     private TlgChatEntity destChat;
 
     @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "ordered_expression_id")
+    @JoinColumn(name = "chat_pair_id")
     private Set<OrderedExpressionEntity> orderedExpressionEntities;
 
     @Column(name = "delay")

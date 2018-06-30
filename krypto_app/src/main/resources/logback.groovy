@@ -1,7 +1,7 @@
 import ch.qos.logback.core.util.FileSize
 
 def logPattern = "%d{yyyy-MM-dd'T'HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-def BASE_PATH = "../musicboom/logs"
+def BASE_PATH = "../kpride/logs"
 
 appender("CONSOLE", ConsoleAppender) {
     encoder(PatternLayoutEncoder) {
@@ -10,12 +10,12 @@ appender("CONSOLE", ConsoleAppender) {
 }
 
 appender("FILE", RollingFileAppender) {
-    file = "${BASE_PATH}/mb.log"
+    file = "${BASE_PATH}/kpride.log"
     encoder(PatternLayoutEncoder) {
         pattern = logPattern
     }
     rollingPolicy(FixedWindowRollingPolicy) {
-        fileNamePattern = "${BASE_PATH}/mb_%i.log"
+        fileNamePattern = "${BASE_PATH}/kpride_%i.log"
         minIndex = 1
         maxIndex = 10
     }

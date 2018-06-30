@@ -1,7 +1,6 @@
 package ru.airiva.entities;
 
 import javax.persistence.*;
-
 import java.util.Set;
 
 import static ru.airiva.entities.EntityConstants.*;
@@ -32,8 +31,7 @@ public class TlgBotEntity {
     @Column(name = "username")
     private String username;
 
-    @OneToOne
-    @JoinColumn(name = "person_id")
+    @OneToOne(mappedBy = "bot")
     private PersonEntity personEntity;
 
     @OneToMany
