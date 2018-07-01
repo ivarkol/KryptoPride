@@ -7,6 +7,7 @@ import ru.airiva.exception.*;
 import ru.airiva.parser.Courier;
 import ru.airiva.parser.Expression;
 import ru.airiva.parser.Parser;
+import ru.airiva.service.fg.KryptoParserInitializeFgService;
 import ru.airiva.service.fg.TlgInteractionFgService;
 import ru.airiva.vo.TlgChannel;
 
@@ -18,7 +19,7 @@ import java.util.List;
 public class TlgInteractionCgService implements TlgInteraction {
 
     private TlgInteractionFgService tlgInteractionFgService;
-    private KryptoParserCgService kryptoParserCgService;
+    private KryptoParserInitializeFgService kryptoParserInitializeFgService;
 
     @Autowired
     public void setTlgInteractionFgService(TlgInteractionFgService tlgInteractionFgService) {
@@ -26,8 +27,8 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Autowired
-    public void setKryptoParserCgService(KryptoParserCgService kryptoParserCgService) {
-        this.kryptoParserCgService = kryptoParserCgService;
+    public void setKryptoParserInitializeFgService(KryptoParserInitializeFgService kryptoParserInitializeFgService) {
+        this.kryptoParserInitializeFgService = kryptoParserInitializeFgService;
     }
 
     @Override
@@ -96,7 +97,7 @@ public class TlgInteractionCgService implements TlgInteraction {
     @Override
     public void includeParsing(String phone, long source, long target)
             throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException {
-        TlgChatPairEntity pair = kryptoParserCgService.obtainTlgChatPair(phone, source, target);
+        TlgChatPairEntity pair = kryptoParserInitializeFgService.obtainEnabledTlgChatPair(phone, source, target);
         try {
             if (pair != null) {
                 tlgInteractionFgService.addCourier(phone, new Courier(source, target, new Parser(pair.getOrderedExpressionEntities()), pair.getDelay()));

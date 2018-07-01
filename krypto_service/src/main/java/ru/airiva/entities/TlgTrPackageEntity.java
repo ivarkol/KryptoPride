@@ -26,6 +26,9 @@ public class TlgTrPackageEntity {
     )
     private Set<TlgChatPairEntity> tlgChatPairEntities;
 
+    @Column(name = "enabled")
+    private boolean enabled = false;
+
     public Long getId() {
         return id;
     }
@@ -40,6 +43,14 @@ public class TlgTrPackageEntity {
 
     public void setTlgChatPairEntities(Set<TlgChatPairEntity> tlgChatPairEntities) {
         this.tlgChatPairEntities = tlgChatPairEntities;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override

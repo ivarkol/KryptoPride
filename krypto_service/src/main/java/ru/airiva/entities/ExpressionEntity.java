@@ -23,7 +23,7 @@ public class ExpressionEntity {
     @Column(name = "replacement")
     private String replacement;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "person_id")
     private PersonEntity personEntity;
 

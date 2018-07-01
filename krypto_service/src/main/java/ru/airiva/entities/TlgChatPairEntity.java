@@ -37,6 +37,10 @@ public class TlgChatPairEntity {
     @JoinColumn(name = "tr_package_id")
     private TlgTrPackageEntity tlgTrPackageEntity;
 
+    @ManyToOne
+    @JoinColumn(name = "client_id")
+    private TlgClientEntity tlgClientEntity;
+
     public Long getId() {
         return id;
     }
@@ -83,6 +87,14 @@ public class TlgChatPairEntity {
 
     public void setTlgTrPackageEntity(TlgTrPackageEntity tlgTrPackageEntity) {
         this.tlgTrPackageEntity = tlgTrPackageEntity;
+    }
+
+    public TlgClientEntity getTlgClientEntity() {
+        return tlgClientEntity;
+    }
+
+    public void setTlgClientEntity(TlgClientEntity tlgClientEntity) {
+        this.tlgClientEntity = tlgClientEntity;
     }
 
     @Override

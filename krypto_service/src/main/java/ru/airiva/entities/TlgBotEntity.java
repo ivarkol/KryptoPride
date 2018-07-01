@@ -31,7 +31,7 @@ public class TlgBotEntity {
     @Column(name = "username")
     private String username;
 
-    @OneToOne(mappedBy = "bot")
+    @OneToOne(mappedBy = "bot", fetch = FetchType.LAZY)
     private PersonEntity personEntity;
 
     @OneToMany
