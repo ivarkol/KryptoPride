@@ -20,6 +20,9 @@ public class TlgClientEntity {
     @Column(name = "phone", length = 20)
     private String phone;
 
+    @Column(name = "username")
+    private String username;
+
     @ManyToMany
     @JoinTable(
             name = "tlg_clients_own_chats",
@@ -50,6 +53,14 @@ public class TlgClientEntity {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public Set<TlgChatEntity> getOwnChats() {

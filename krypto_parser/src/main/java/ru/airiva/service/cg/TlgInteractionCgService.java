@@ -76,6 +76,11 @@ public class TlgInteractionCgService implements TlgInteraction {
     }
 
     @Override
+    public boolean isEnableParsing(String phone) {
+        return false;
+    }
+
+    @Override
     public void logout(final String phone) {
         tlgInteractionFgService.logout(phone);
     }

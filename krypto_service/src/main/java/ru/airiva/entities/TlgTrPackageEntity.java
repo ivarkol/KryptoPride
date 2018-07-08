@@ -18,6 +18,7 @@ public class TlgTrPackageEntity {
     @GeneratedValue(generator = TLG_TR_PACKAGES_GEN, strategy = GenerationType.SEQUENCE)
     private Long id;
 
+
     @ManyToMany
     @JoinTable(
             name = "tlg_tr_packages_chat_pairs",
@@ -25,6 +26,10 @@ public class TlgTrPackageEntity {
             inverseJoinColumns = {@JoinColumn(name = "chat_pair_id")}
     )
     private Set<TlgChatPairEntity> tlgChatPairEntities;
+
+    @ManyToOne
+    @JoinColumn(name = "person_id")
+    private PersonEntity personEntity;
 
     @Column(name = "enabled")
     private boolean enabled = false;
@@ -43,6 +48,14 @@ public class TlgTrPackageEntity {
 
     public void setTlgChatPairEntities(Set<TlgChatPairEntity> tlgChatPairEntities) {
         this.tlgChatPairEntities = tlgChatPairEntities;
+    }
+
+    public PersonEntity getPersonEntity() {
+        return personEntity;
+    }
+
+    public void setPersonEntity(PersonEntity personEntity) {
+        this.personEntity = personEntity;
     }
 
     public boolean isEnabled() {

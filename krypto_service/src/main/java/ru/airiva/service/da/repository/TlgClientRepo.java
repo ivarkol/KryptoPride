@@ -9,4 +9,10 @@ import ru.airiva.entities.TlgClientEntity;
  */
 @Repository
 public interface TlgClientRepo extends JpaRepository<TlgClientEntity, Long> {
+
+    TlgClientEntity findByPhone(String phone);
+
+    void deleteByPhone(String phone);
+
+    boolean existsByPhone(String phone);
 }

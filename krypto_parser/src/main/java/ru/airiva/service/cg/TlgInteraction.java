@@ -29,6 +29,14 @@ public interface TlgInteraction {
     void stopParsing(String phone) throws TlgWaitAuthCodeBsException, TlgNeedAuthBsException, TlgDefaultBsException, TlgTimeoutBsException;
 
     /**
+     * Статус активности парсинга текущего клиента
+     *
+     * @param phone телефон клиента
+     * @return true - парсинг активен, иначе - false
+     */
+    boolean isEnableParsing(String phone);
+
+    /**
      * Проверка кода аутентификации клиента
      *
      * @param code  код

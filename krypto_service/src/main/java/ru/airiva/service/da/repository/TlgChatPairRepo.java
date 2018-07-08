@@ -16,4 +16,6 @@ public interface TlgChatPairRepo extends JpaRepository<TlgChatPairEntity, Long> 
 
     TlgChatPairEntity getTlgChatPairEntityBySrcChat_TlgChatIdAndDestChat_TlgChatIdAndTlgClientEntity_PhoneAndTlgTrPackageEntity_Enabled(long srcChatId, long destChatId, String phone, boolean enabled);
 
+    Set<TlgChatPairEntity> findByTlgTrPackageEntityId(Long trPackageId);
+
 }
