@@ -14,6 +14,9 @@ import static ru.airiva.entities.EntityConstants.TLG_CLIENTS;
 public class TlgClientEntity {
 
     @Id
+    @GeneratedValue
+    private Long id;
+
     @Column(name = "tlg_id")
     private Long tlgId;
 
@@ -38,6 +41,14 @@ public class TlgClientEntity {
             inverseJoinColumns = {@JoinColumn(name = "guest_chat_id")}
     )
     private Set<TlgChatEntity> guestChats;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Long getTlgId() {
         return tlgId;

@@ -2,6 +2,7 @@ package ru.airiva.config;
 
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
+import ru.airiva.config.filter.LoggingFilter;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -30,6 +31,8 @@ public class WebAppInit extends AbstractAnnotationConfigDispatcherServletInitial
         System.out.println("encoding-filter");
         servletContext.addFilter("encoding-filter", new CharacterEncodingFilter(UTF_8.name(), true))
                 .addMappingForUrlPatterns(null, true, "/*");
+        servletContext.addFilter("logging-filter", new LoggingFilter())
+                .addMappingForUrlPatterns(null, false, "/*");
         super.onStartup(servletContext);
     }
 }

@@ -33,4 +33,15 @@ public class PersonFgService {
     public PersonEntity getById(Long personId) {
         return personRepo.findById(personId).orElse(null);
     }
+
+    @Transactional
+    public PersonEntity updatePerson(TlgClientEntity tlgClientEntity) {
+        PersonEntity personEntity = personRepo.findById(1L).get();
+        Set<TlgClientEntity> clients = personEntity.getClients();
+        if (clients == null) {
+            clients = new HashSet<>();
+        }
+        clients.add(tlgClientEntity);
+        return personRepo.saveAndFlush(personEntity);
+    }
 }

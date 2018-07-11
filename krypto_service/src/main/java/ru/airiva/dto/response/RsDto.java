@@ -16,7 +16,7 @@ public class RsDto implements Serializable {
 
     private static final Logger logger = LoggerFactory.getLogger(RsDto.class);
 
-    private RsStatus status;
+    private RsStatus status = RsStatus.SUCCESS;
     private String error;
 
     public RsDto() {
@@ -40,6 +40,14 @@ public class RsDto implements Serializable {
 //            this.error = BsException.create(MbError.UNE01).getMessage();
 //        }
         logger.error(e.getMessage(), e);
+    }
+
+    public RsStatus getStatus() {
+        return status;
+    }
+
+    public String getError() {
+        return error;
     }
 
     public static RsDto success() {

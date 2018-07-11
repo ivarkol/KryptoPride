@@ -19,10 +19,16 @@ import java.util.stream.Collectors;
 public class TlgClientFgService {
 
     private TlgClientRepo tlgClientRepo;
+    private PersonFgService personFgService;
 
     @Autowired
     public void setTlgClientRepo(TlgClientRepo tlgClientRepo) {
         this.tlgClientRepo = tlgClientRepo;
+    }
+
+    @Autowired
+    public void setPersonFgService(PersonFgService personFgService) {
+        this.personFgService = personFgService;
     }
 
     @Transactional
@@ -51,6 +57,7 @@ public class TlgClientFgService {
         client = getByPhone(tlgClientEntity.getPhone());
         if (client == null) {
             client = tlgClientRepo.save(tlgClientEntity);
+            personFgService.updatePerson(client);
         }
         return client;
     }
