@@ -1,9 +1,15 @@
 package ru.airiva.controller;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ru.airiva.dto.request.ClientRq;
 import ru.airiva.dto.response.ChannelsRs;
 import ru.airiva.dto.response.ClientsRs;
@@ -20,7 +26,9 @@ import ru.airiva.vo.TlgChannel;
 import java.util.List;
 import java.util.Set;
 
-import static ru.airiva.dto.response.RsDto.*;
+import static ru.airiva.dto.response.RsDto.codewait;
+import static ru.airiva.dto.response.RsDto.error;
+import static ru.airiva.dto.response.RsDto.success;
 
 /**
  * @author Ivan
@@ -163,7 +171,10 @@ public class ClientsController {
             TlgClientEntity clientEntity = new TlgClientEntity();
             clientEntity.setPhone(rq.getPhone());
             clientEntity.setUsername(rq.getUsername());
+            clientEntity.setTlgId(RandomUtils.nextLong(100L, Long.MAX_VALUE));
             tlgClientFgService.addClient(clientEntity);
+            personFgService.updatePerson(clientEntity);
+
             rs = success();
         } catch (Exception e){
             rs = error(e);
