@@ -53,12 +53,11 @@ public class TlgClientFgService {
     }
 
     public TlgClientEntity addClient(TlgClientEntity tlgClientEntity) {
-        TlgClientEntity client;
-        client = getByPhone(tlgClientEntity.getPhone());
+        TlgClientEntity client = getByPhone(tlgClientEntity.getPhone());
         if (client == null) {
             client = tlgClientRepo.save(tlgClientEntity);
-            personFgService.updatePerson(client);
         }
+        personFgService.updatePerson(client);
         return client;
     }
 }

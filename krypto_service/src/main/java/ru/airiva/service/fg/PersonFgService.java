@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.airiva.entities.PersonEntity;
 import ru.airiva.entities.TlgClientEntity;
+import ru.airiva.enums.KryptoRole;
 import ru.airiva.service.da.repository.PersonRepo;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -36,12 +38,20 @@ public class PersonFgService {
 
     @Transactional
     public PersonEntity updatePerson(TlgClientEntity tlgClientEntity) {
-        PersonEntity personEntity = personRepo.findById(1L).get();
-        Set<TlgClientEntity> clients = personEntity.getClients();
-        if (clients == null) {
-            clients = new HashSet<>();
+        Optional<PersonEntity> opt = personRepo.findById(1L);
+        PersonEntity person;
+        if (!opt.isPresent()) {
+            person = new PersonEntity();
+            person.setId(1L);
+            person.setPassword("admin");
+            person.setUsername("admin");
+            person.setRole(KryptoRole.ADMIN);
+            person.setPaymentAddress("payment address");
+            person = personRepo.save(person);
+        } else {
+            person = opt.get();
         }
-        clients.add(tlgClientEntity);
-        return personRepo.saveAndFlush(personEntity);
+        person.getClients().add(tlgClientEntity);
+        return personRepo.saveAndFlush(person);
     }
 }

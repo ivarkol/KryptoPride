@@ -173,8 +173,6 @@ public class ClientsController {
             clientEntity.setUsername(rq.getUsername());
             clientEntity.setTlgId(RandomUtils.nextLong(100L, Long.MAX_VALUE));
             tlgClientFgService.addClient(clientEntity);
-            personFgService.updatePerson(clientEntity);
-
             rs = success();
         } catch (Exception e){
             rs = error(e);

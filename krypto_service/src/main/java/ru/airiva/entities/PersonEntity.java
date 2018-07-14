@@ -2,14 +2,24 @@ package ru.airiva.entities;
 
 import ru.airiva.enums.KryptoRole;
 
-import javax.persistence.*;
-
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import static ru.airiva.entities.EntityConstants.*;
+import static ru.airiva.entities.EntityConstants.PERSONS;
+import static ru.airiva.entities.EntityConstants.PERSONS_GEN;
+import static ru.airiva.entities.EntityConstants.PERSONS_SEQ;
 
 /**
  * @author Ivan
@@ -21,12 +31,12 @@ import static ru.airiva.entities.EntityConstants.*;
 public class PersonEntity {
 
     @Id
-    @GeneratedValue(generator = PERSONS_GEN, strategy = GenerationType.SEQUENCE)
+//    @GeneratedValue(generator = PERSONS_GEN, strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @OneToMany
     @JoinColumn(name = "person_id")
-    private Set<TlgClientEntity> clients;
+    private Set<TlgClientEntity> clients = new HashSet<>();
 
     @OneToOne
     @JoinColumn(name = "bot_id")
@@ -34,7 +44,7 @@ public class PersonEntity {
 
     @OneToMany
     @JoinColumn(name = "person_id")
-    private Set<TlgTrPackageEntity> tlgTrPackageEntities;
+    private Set<TlgTrPackageEntity> tlgTrPackageEntities = new HashSet<>();
 
     @Column(name = "payment_address")
     private String paymentAddress;
@@ -64,10 +74,6 @@ public class PersonEntity {
         return clients;
     }
 
-    public void setClients(Set<TlgClientEntity> clients) {
-        this.clients = clients;
-    }
-
     public TlgBotEntity getBot() {
         return bot;
     }
@@ -78,10 +84,6 @@ public class PersonEntity {
 
     public Set<TlgTrPackageEntity> getTlgTrPackageEntities() {
         return tlgTrPackageEntities;
-    }
-
-    public void setTlgTrPackageEntities(Set<TlgTrPackageEntity> tlgTrPackageEntities) {
-        this.tlgTrPackageEntities = tlgTrPackageEntities;
     }
 
     public String getPaymentAddress() {
