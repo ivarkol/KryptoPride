@@ -2,6 +2,7 @@ package ru.airiva.service.fg;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.airiva.entities.TlgTrPackageEntity;
 import ru.airiva.service.da.repository.TlgTrPackageRepo;
 
@@ -20,6 +21,7 @@ public class TlgTrPackageFgService {
         this.tlgTrPackageRepo = tlgTrPackageRepo;
     }
 
+    @Transactional
     public Set<TlgTrPackageEntity> getTranslations(Long personId) {
         return tlgTrPackageRepo.findByPersonEntityId(personId);
     }
@@ -28,8 +30,8 @@ public class TlgTrPackageFgService {
         tlgTrPackageRepo.deleteById(id);
     }
 
-    public void saveTranslation(TlgTrPackageEntity tlgTrPackageEntity) {
-        tlgTrPackageRepo.saveAndFlush(tlgTrPackageEntity);
+    public TlgTrPackageEntity saveTranslation(TlgTrPackageEntity tlgTrPackageEntity) {
+        return tlgTrPackageRepo.saveAndFlush(tlgTrPackageEntity);
     }
 
 }

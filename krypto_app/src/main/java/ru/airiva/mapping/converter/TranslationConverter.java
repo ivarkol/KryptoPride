@@ -28,12 +28,13 @@ public class TranslationConverter implements Converter<TlgTrPackageEntity, Trans
         if (source == null) return null;
         TranslationDto translationDto = new TranslationDto();
         translationDto.setId(source.getId().toString());
+        translationDto.setName(source.getName());
 
         Set<TlgChatPairEntity> chatPairs = tlgChatPairFgService.getChatPairsByTrPackage(source.getId());
         if (CollectionUtils.isNotEmpty(chatPairs)) {
             source.getTlgChatPairEntities().stream().findFirst().ifPresent(tlgChatPairEntity -> {
-                        translationDto.setAccount(tlgChatPairEntity.getTlgClientEntity().getUsername());
-                        translationDto.setConsumer(tlgChatPairEntity.getDestChat().getUsername());
+                        translationDto.setAccount(tlgChatPairEntity.getTlgClientEntity().getPhone());
+                        translationDto.setConsumer(tlgChatPairEntity.getDestChat().getTlgChatId().toString());
                     });
         }
         translationDto.setActive(source.isEnabled());

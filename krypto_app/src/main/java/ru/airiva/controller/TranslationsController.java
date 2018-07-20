@@ -1,9 +1,16 @@
 package ru.airiva.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import ru.airiva.dto.ProducerDto;
 import ru.airiva.dto.request.TranslationDeleteRq;
 import ru.airiva.dto.response.RsDto;
@@ -16,6 +23,7 @@ import ru.airiva.mapping.converter.TranslationConverter;
 import ru.airiva.service.cg.TlgInteractionCgService;
 import ru.airiva.service.fg.PersonFgService;
 import ru.airiva.service.fg.TlgChatFgService;
+import ru.airiva.service.fg.TlgChatPairFgService;
 import ru.airiva.service.fg.TlgClientFgService;
 import ru.airiva.service.fg.TlgTrPackageFgService;
 
@@ -33,12 +41,15 @@ import static ru.airiva.dto.response.RsDto.success;
 @RequestMapping("/translations")
 public class TranslationsController {
 
+    private static final Logger logger = LoggerFactory.getLogger(TranslationsController.class);
+
     private TlgTrPackageFgService tlgTrPackageFgService;
     private TranslationConverter translationConverter;
     private TlgInteractionCgService tlgInteractionCgService;
     private PersonFgService personFgService;
     private TlgClientFgService tlgClientFgService;
     private TlgChatFgService tlgChatFgService;
+    private TlgChatPairFgService tlgChatPairFgService;
 
     @Autowired
     public void setTlgTrPackageFgService(TlgTrPackageFgService tlgTrPackageFgService) {
@@ -70,24 +81,38 @@ public class TranslationsController {
         this.tlgChatFgService = tlgChatFgService;
     }
 
+    @Autowired
+    public void setTlgChatPairFgService(TlgChatPairFgService tlgChatPairFgService) {
+        this.tlgChatPairFgService = tlgChatPairFgService;
+    }
+
     @GetMapping
     public ResponseEntity<RsDto> translations() {
         TranslationsRs rs;
         try {
-            rs = new TranslationsRs();
-
-            Set<TlgTrPackageEntity> translationsEntity = tlgTrPackageFgService.getTranslations(1L);
-            translationsEntity.forEach(entity -> rs.getTranslationDtos().add(translationConverter.convert(entity)));
-            rs.getTranslationDtos().sort((o1, o2) -> {
-                if (o1 != null && o2 != null && o1.getName() != null && o2.getName() != null) {
-                    return o1.getName().compareTo(o2.getName());
-                }
-                return 0;
-            });
+            rs = getTranslations();
         } catch (Exception e) {
             return ResponseEntity.ok(error(e));
         }
         return ResponseEntity.ok(rs);
+    }
+
+    @Transactional
+    TranslationsRs getTranslations() {
+        TranslationsRs rs = new TranslationsRs();
+        logger.debug("GetTranslations started!!!!!!!!!!!!!!!!!!");
+        Set<TlgTrPackageEntity> translationsEntity = tlgTrPackageFgService.getTranslations(1L);
+        logger.debug("TranslationEntities obtained!!!!!!!!!!!!!!!!!!");
+        translationsEntity.forEach(entity -> rs.getTranslationDtos().add(translationConverter.convert(entity)));
+        logger.debug("TranslationEntities converted!!!!!!!!!!!!!!!!!!");
+        rs.getTranslationDtos().sort((o1, o2) -> {
+            if (o1 != null && o2 != null && o1.getName() != null && o2.getName() != null) {
+                return o1.getName().compareTo(o2.getName());
+            }
+            return 0;
+        });
+        logger.debug("GetTranslations finished!!!!!!!!!!!!!!!!!!");
+        return rs;
     }
 
     @GetMapping("/del")
@@ -102,6 +127,8 @@ public class TranslationsController {
 
     @PostMapping("/save")
     public ResponseEntity<RsDto> saveTranslation(@RequestBody TranslationDeleteRq rq) {
+
+        logger.info(rq.toString());
 
         try {
 
@@ -128,7 +155,9 @@ public class TranslationsController {
 
         TlgTrPackageEntity tlgTrPackageEntity = new TlgTrPackageEntity();
         tlgTrPackageEntity.setEnabled(true);
+        tlgTrPackageEntity.setName(rq.getName());
         tlgTrPackageEntity.setPersonEntity(personFgService.getById(1L));
+        tlgTrPackageEntity = tlgTrPackageFgService.saveTranslation(tlgTrPackageEntity);
         Set<TlgChatPairEntity> tlgChatPairEntitySet = new HashSet<>(producers.size());
 
         final TlgClientEntity client = tlgClientFgService.getByPhone(clientPhone);
@@ -158,7 +187,7 @@ public class TranslationsController {
             pair.setOrderedExpressionEntities(new HashSet<>());
             pair.setTlgClientEntity(client);
             pair.setTlgTrPackageEntity(tlgTrPackageEntity);
-            tlgChatPairEntitySet.add(pair);
+            tlgChatPairEntitySet.add(tlgChatPairFgService.savePair(pair));
         }
         tlgTrPackageEntity.setTlgChatPairEntities(tlgChatPairEntitySet);
 

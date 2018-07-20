@@ -1,10 +1,22 @@
 package ru.airiva.entities;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.util.Objects;
 import java.util.Set;
 
-import static ru.airiva.entities.EntityConstants.*;
+import static ru.airiva.entities.EntityConstants.TLG_TR_PACKAGES;
+import static ru.airiva.entities.EntityConstants.TLG_TR_PACKAGES_GEN;
+import static ru.airiva.entities.EntityConstants.TLG_TR_PACKAGES_SEQ;
 
 /**
  * @author Ivan
@@ -33,6 +45,9 @@ public class TlgTrPackageEntity {
 
     @Column(name = "enabled")
     private boolean enabled = false;
+
+    @Column(name = "name")
+    private String name;
 
     public Long getId() {
         return id;
@@ -64,6 +79,14 @@ public class TlgTrPackageEntity {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override

@@ -47,4 +47,14 @@ public class TranslationDeleteRq extends RqDto {
     public void setProducers(List<ProducerDto> producers) {
         this.producers = producers;
     }
+
+    @Override
+    public String toString() {
+        return "TranslationDeleteRq{" +
+                "name='" + name + '\'' +
+                ", clientPhone='" + clientPhone + '\'' +
+                ", consumer=" + consumer +
+                ", producers=" + producers +
+                '}';
+    }
 }
