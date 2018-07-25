@@ -132,6 +132,7 @@ public class TranslationsController {
 
         try {
 
+            saveTlgTrPackageEntity(rq);
             String clientPhone = rq.getClientPhone();
             Long target = rq.getConsumer();
             List<ProducerDto> producers = rq.getProducers();
@@ -139,7 +140,6 @@ public class TranslationsController {
                 tlgInteractionCgService.includeParsing(clientPhone, pd.getChannelId(), target);
             }
 
-            saveTlgTrPackageEntity(rq);
 
         } catch (Exception e) {
             return ResponseEntity.ok(error(e));

@@ -90,12 +90,12 @@ public class TlgClientEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TlgClientEntity that = (TlgClientEntity) o;
-        return Objects.equals(tlgId, that.tlgId);
+        return Objects.equals(phone, that.phone);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(tlgId);
+        return Objects.hash(phone);
     }
 }

@@ -14,7 +14,7 @@ public class ChannelConverter implements Converter<TlgChannel, ChannelDto> {
         if (source == null) return null;
         ChannelDto channel = new ChannelDto();
         channel.setId(String.valueOf(source.getChatId()));
-        channel.setUsername(source.getUsername());
+        channel.setUsername(source.getTitle());
         return channel;
     }
 }

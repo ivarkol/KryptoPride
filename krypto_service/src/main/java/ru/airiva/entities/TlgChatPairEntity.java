@@ -1,10 +1,23 @@
 package ru.airiva.entities;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
 import java.util.Objects;
 import java.util.Set;
 
-import static ru.airiva.entities.EntityConstants.*;
+import static ru.airiva.entities.EntityConstants.CHAT_PAIRS;
+import static ru.airiva.entities.EntityConstants.CHAT_PAIRS_GEN;
+import static ru.airiva.entities.EntityConstants.CHAT_PAIRS_SEQ;
 
 /**
  * @author Ivan
@@ -103,11 +116,14 @@ public class TlgChatPairEntity {
         if (o == null || getClass() != o.getClass()) return false;
         TlgChatPairEntity that = (TlgChatPairEntity) o;
         return Objects.equals(srcChat, that.srcChat) &&
-                Objects.equals(destChat, that.destChat);
+                Objects.equals(destChat, that.destChat) &&
+                Objects.equals(tlgTrPackageEntity, that.tlgTrPackageEntity) &&
+                Objects.equals(tlgClientEntity, that.tlgClientEntity);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(srcChat, destChat);
+
+        return Objects.hash(srcChat, destChat, tlgTrPackageEntity, tlgClientEntity);
     }
 }

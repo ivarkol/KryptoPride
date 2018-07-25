@@ -1,5 +1,6 @@
 package ru.airiva.entities;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -31,7 +32,7 @@ public class TlgTrPackageEntity {
     private Long id;
 
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "tlg_tr_packages_chat_pairs",
             joinColumns = {@JoinColumn(name = "tlg_tr_package_id")},
@@ -94,11 +95,12 @@ public class TlgTrPackageEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TlgTrPackageEntity that = (TlgTrPackageEntity) o;
-        return Objects.equals(tlgChatPairEntities, that.tlgChatPairEntities);
+        return Objects.equals(id, that.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tlgChatPairEntities);
+
+        return Objects.hash(id);
     }
 }
