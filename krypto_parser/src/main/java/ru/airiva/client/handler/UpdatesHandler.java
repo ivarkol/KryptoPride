@@ -105,6 +105,13 @@ public class UpdatesHandler implements Client.ResultHandler {
                                 tlgClient.channels.put(supergroup.id, tlgChannel);
                             }
 
+                            if (statusConstructor == TdApi.ChatMemberStatusAdministrator.CONSTRUCTOR
+                                    || statusConstructor == TdApi.ChatMemberStatusCreator.CONSTRUCTOR) {
+                                tlgChannel.setAdmin(true);
+                            } else {
+                                tlgChannel.setAdmin(false);
+                            }
+
                         }
                     }
                 }

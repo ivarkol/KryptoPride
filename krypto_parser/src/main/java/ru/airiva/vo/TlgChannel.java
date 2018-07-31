@@ -11,6 +11,7 @@ public class TlgChannel implements Comparable<TlgChannel> {
     private String title;
     private long chatId;
     private String username;
+    boolean admin = false;
 
     public void setTitle(String title) {
         this.title = title != null ? title : "unknown";
@@ -38,6 +39,14 @@ public class TlgChannel implements Comparable<TlgChannel> {
 
     public TlgChannel(int id) {
         this.id = id;
+    }
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
     }
 
     @Override
