@@ -91,9 +91,9 @@ public class ClientsController {
             rs = new ChannelsRs();
             List<TlgChannel> sortedChannels = tlgInteractionCgService.getSortedChannels(phone);
             if (CollectionUtils.isNotEmpty(sortedChannels)) {
-                sortedChannels.forEach(sortedChannel -> {
-                    if (sortedChannel != null) rs.getChannels().add(channelConverter.convert(sortedChannel));
-                });
+                sortedChannels.stream()
+                        .filter(TlgChannel::isAdmin)
+                        .forEach(sortedChannel -> rs.getChannels().add(channelConverter.convert(sortedChannel)));
             }
         } catch (Exception e) {
             return ResponseEntity.ok(error(e));
